@@ -256,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-23.6';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-23.7';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -268,8 +268,10 @@ const SCALES = {
   dorian:     { name:'Dorian',     steps:[0,2,3,5,7,9,10], labels:['1','2','♭3','4','5','6','♭7'] },
   mixolydian: { name:'Mixolydian', steps:[0,2,4,5,7,9,10], labels:['1','2','3','4','5','6','♭7'] },
   lydian:     { name:'Lydian',     steps:[0,2,4,6,7,9,11], labels:['1','2','3','♯4','5','6','7'] },
-  phrygian:   { name:'Phrygian',   steps:[0,1,3,5,7,8,10], labels:['1','♭2','♭3','4','5','♭6','♭7'] }
+  phrygian:   { name:'Phrygian',   steps:[0,1,3,5,7,8,10], labels:['1','♭2','♭3','4','5','♭6','♭7'] },
+  locrian:    { name:'Locrian',    steps:[0,1,3,5,6,8,10], labels:['1','♭2','♭3','4','♭5','♭6','♭7'] }
 };
+const MODE_ORDER = ['major','dorian','phrygian','lydian','mixolydian','minor','locrian'];   // the traditional order, brightest to darkest-ish
 // Chromatic notes: the twelve semitones above the tonic, and where each sits on the major scale (step index, and -1/+1 for lowered/raised).
 const CHROMA = ['1','♭2','2','♭3','3','4','♯4','5','♭6','6','♭7','7'];
 const CHROMA_POS = {'1':[0,0],'♭2':[1,-1],'2':[1,0],'♭3':[2,-1],'3':[2,0],'4':[3,0],'♯4':[3,1],'5':[4,0],'♭6':[5,-1],'6':[5,0],'♭7':[6,-1],'7':[6,0]};
@@ -320,8 +322,8 @@ function resolveNotes(s, alt, style){
 function cadence(pc, oct=0, type='I-IV-V-I', scale='major'){
   const t = tonicMidi(pc) + 12*oct;
   const V = [t-5,t-1,t+2,t+7], V7 = [t-5,t-1,t+2,t+5,t+7];
-  const minorish = scale === 'minor' || scale === 'dorian' || scale === 'phrygian';
-  const tonic = minorish ? [t-12,t,t+3,t+7] : [t-12,t,t+4,t+7];
+  const minorish = scale === 'minor' || scale === 'dorian' || scale === 'phrygian' || scale === 'locrian';
+  const tonic = scale === 'locrian' ? [t-12,t,t+3,t+6] : minorish ? [t-12,t,t+3,t+7] : [t-12,t,t+4,t+7];
   if (type === 'several tonics') return [[t-12, t, t+12]];
   if (type === 'tonic') return [[t]];
   if (type === 'I') return [tonic];
@@ -338,7 +340,7 @@ function cadence(pc, oct=0, type='I-IV-V-I', scale='major'){
     }
   }
   // Modes: tonic, then the chord that gives the mode its colour, then tonic again
-  const colour = { dorian:[t-7,t,t+5,t+9], mixolydian:[t-14,t-2,t+2,t+5], lydian:[t-10,t+2,t+6,t+9], phrygian:[t-11,t+1,t+5,t+8] }[scale];
+  const colour = { dorian:[t-7,t,t+5,t+9], mixolydian:[t-14,t-2,t+2,t+5], lydian:[t-10,t+2,t+6,t+9], phrygian:[t-11,t+1,t+5,t+8], locrian:[t-6,t-2,t+1,t+6] }[scale];
   return [tonic, colour, tonic];
 }
 
@@ -436,10 +438,13 @@ const nextVisible = i => { while (i < LEVELS.length-1 && LEVELS[i].hidden) i++; 
 // The mode (scale) chosen in Settings; the whole ladder is heard and named in it. Each mode keeps its own progress.
 const modeScale = () => (typeof S !== 'undefined' && S && SCALES[S.mode] ? S.mode : 'major');
 // Notes outside a scale, most common first; a chromatic level adds the first `outs` of them to the scale's own notes.
-const OUT_ORDER = ['♭7','7','♯4','♭3','3','♭6','6','♭2','2','4'];
+const OUT_ORDER = ['♭7','7','♯4','♭3','3','♭6','6','♭2','2','4','5'];
+// The twelve notes of a scale's chromatic pad, by semitone: the scale's own label where it has a note, otherwise the usual one (Locrian's ♭5 stands where ♯4 would)
+function chromaLabels(scale){ const st = SCALES[scale].steps; return CHROMA.map((l,v) => { const i = st.indexOf(v); return i >= 0 ? SCALES[scale].labels[i] : l; }); }
 function chromaDegrees(scale, outs){
-  const own = SCALES[scale].labels, out = OUT_ORDER.filter(l => CHROMA.includes(l) && !own.includes(l)).slice(0, outs);
-  return CHROMA.filter(l => own.includes(l) || out.includes(l));
+  const st = SCALES[scale].steps, all = chromaLabels(scale);
+  const out = OUT_ORDER.filter(l => CHROMA.includes(l) && !st.includes(CHROMA.indexOf(l))).slice(0, outs);
+  return all.filter((l,v) => st.includes(v) || out.includes(l));
 }
 // Where an outside note sits relative to a scale: the scale step with the same number, lowered or raised by a semitone.
 function chromaPos(scale, label){
@@ -1030,7 +1035,7 @@ async function playQuestionNotes(q, token, onStep){
 // With lightPad, the number pad lights up in step with the notes: 1 2 3 4 on the top row resolve right to left,
 // 5 6 7 and the upper 1 on the bottom row resolve left to right.
 const clearPadLights = () => document.querySelectorAll('#tPad .res-lit, #tPiano .res-lit').forEach(b => b.classList.remove('res-lit'));
-const noteLabel = (s, alt, scale) => alt ? CHROMA[mod(SCALES.major.steps[mod(s,7)] + alt, 12)] : posLabel(s, scale);
+const noteLabel = (s, alt, scale) => alt ? CHROMA[mod(SCALES[scale].steps[mod(s,7)] + alt, 12)] : posLabel(s, scale);
 async function playResolution(s, key, token, lightPad, scale='major', alt=0){
   const path = resolveNotes(s, alt), base = s - mod(s,7);
   const mids = path.map(([x,a]) => noteMidi(x, key, scale, a));
@@ -1076,7 +1081,7 @@ function renderPad(q){
   pad.classList.toggle('chroma', !!cur.chroma);
   if (cur.chroma){
     // all twelve notes; the ones this level doesn't use yet are dimmed
-    pad.innerHTML = CHROMA.map(d => `<button class="deg ${d==='1'?'tonic':''} ${active.includes(d)?'':'off'}" data-d="${d}"${/^\d$/.test(d) ? ` data-n="${d}"` : ''}>${d}</button>`).join('');
+    pad.innerHTML = chromaLabels(scale).map(d => `<button class="deg ${d==='1'?'tonic':''} ${active.includes(d)?'':'off'}" data-d="${d}"${/^\d$/.test(d) ? ` data-n="${d}"` : ''}>${d}</button>`).join('');
     return;
   }
   // 1–7 plus the upper 1, so the pad reads as a full octave in two rows of four (the labels follow the scale: ♭3 in minor)
@@ -1556,7 +1561,7 @@ const sharedStats = lvl => S.mastered[lvl] !== undefined || !!S.pending[lvl] || 
 // Modes: the whole ladder can be practiced in any of the six scales. The top-level progress fields always hold the active mode;
 // the others wait in S.modeStore. An old file has no mode, so it loads as major with everything it had.
 const MODE_FIELDS = ['current','unlocked','mastered','pending','lvDays','hist','levelDeg','deg','conf'];
-const modeName = m => m === 'major' ? 'Major' : SCALES[m].name.replace(/^./, c => c.toUpperCase());
+const modeName = m => m === 'major' ? 'Major (Ionian)' : m === 'minor' ? 'Minor (Aeolian)' : SCALES[m].name;
 function switchMode(m){
   if (!SCALES[m] || m === S.mode) return;
   const keep = {}; MODE_FIELDS.forEach(k => keep[k] = S[k]);
@@ -1647,7 +1652,7 @@ function renderSettings(){
       ${optSelect('breakEvery','Break reminder','Short sessions help you learn more than long ones', s.breakEvery, [[0,'Off'],[5,'After 5 minutes'],[10,'After 10 minutes'],[15,'After 15 minutes'],[20,'After 20 minutes']])}
     </div>
     <h2>Mode</h2><div class="card">
-      ${optSelect('_mode','Practice in','Every level is heard and named in this mode. Each mode keeps its own progress, so switching never loses anything', S.mode, Object.keys(SCALES).map(k => [k, modeName(k)]))}
+      ${optSelect('_mode','Practice in','Every level is heard and named in this mode. Each mode keeps its own progress, so switching never loses anything', S.mode, MODE_ORDER.map(k => [k, modeName(k)]))}
     </div>
     <h2>Keyboard</h2><div class="card">
       ${optSelect('answerWith','Answer with','Works on every level. Also the 123 / Keys button on the training screen. On the keyboard, any octave counts', s.answerWith === 'piano' ? 'piano' : 'level', [['level','Number pad'],['piano','Keyboard']])}
@@ -1692,7 +1697,7 @@ function renderProgress(){
   });
   COMING.forEach(t => { lv += `<div class="lv locked"><div class="n">·</div><div class="t"><b>${t}</b><div>Coming later</div></div></div>`; });
   let bars = '';
-  [...ALL7, ...['♭2','♭3','♯4','♭6','♭7'].filter(d => S.deg[d] && S.deg[d].r.length)].forEach(d => { const st = S.deg[d]; const a = st ? accOf(st.r.slice(-20)) : null;
+  [...ALL7, ...['♭2','♭3','♯4','♭5','♭6','♭7'].filter(d => S.deg[d] && S.deg[d].r.length)].forEach(d => { const st = S.deg[d]; const a = st ? accOf(st.r.slice(-20)) : null;
     const tm = st && st.t.length ? (st.t.slice().sort((x,y)=>x-y)[Math.floor(st.t.length/2)]/1000).toFixed(1)+'s' : '–';
     bars += `<div class="d">${d}</div><div class="b"><i style="width:${a===null?0:a*100}%;background:${a===null?'':a>=.9?'var(--good)':a>=.7?'var(--accent)':'var(--bad)'}"></i></div><div class="p">${a===null?'–':(a*100).toFixed(0)+'%'}</div><div class="tm">${tm}</div>`; });
   const confs = topConfusionPairs(6);
