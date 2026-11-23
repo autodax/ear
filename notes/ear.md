@@ -14,7 +14,7 @@ to melodic dictation.
 - `piano/`: Salamander Grand Piano samples (CC BY 3.0, Alexander Holm, velocity layer 8),
   AAC `.m4a` named by MIDI note number (21 = A0 … 108 = C8), one every 3 keys. Credit is in
   `piano/README.md` and in the app's Settings.
-- `icon-180.png`, `icon-512.png`: blue eighth note (one flag) on pure black (was orange). Icon links carry `?v=5`; bump it when the icon changes.
+- `icon-180.png`, `icon-512.png`: blue eighth note on black, resized from the image Steve supplied (Nov 23 2026). Icon links carry `?v=6` (index.html, manifest.json, ear-sw.js); bump it when the icon changes.
 - `manifest.json`: home-screen web app settings.
 
 ## Decisions (Steve's)
