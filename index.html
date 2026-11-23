@@ -256,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-23.3';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-23.4';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -382,7 +382,7 @@ const LEVELS = [
   {title:'Play it: two notes',   desc:'Keyboard · two-note phrases',      degrees:ALL7, range:RP, len:2, input:'piano'},
   {title:'Play it: three notes', desc:'Keyboard · three-note phrases',    degrees:ALL7, range:RP, len:3, input:'piano'},
   {title:'Play it: four notes',  desc:'Keyboard · four-note phrases',     degrees:ALL7, range:RP, len:4, input:'piano'},
-  {title:'Melodic dictation',    desc:'Keyboard · six-note melodies',     degrees:ALL7, range:RP, len:6, input:'piano'},
+  {title:'Six-note melodies',    desc:'Long melodic fragments',           degrees:ALL7, range:RP, len:6, input:'numbers'},
   // ---- Minor keys and modes (labels follow the scale: 1 2 ♭3 4 5 ♭6 ♭7 in minor)
   {title:'Minor: pentatonic',    desc:'Minor keys · 1 ♭3 4 5 ♭7. The same five-note shape, now in minor', scales:['minor'], idx:[0,2,3,4,6], range:R1, len:1, input:'numbers'},
   {title:'Minor: full scale',    desc:'Natural minor · 1 2 ♭3 4 5 ♭6 ♭7', scales:['minor'], idx:IDX7, range:R1, len:1, input:'numbers'},
@@ -412,6 +412,11 @@ const LEVELS = [
   {title:'Melody with rhythm: 5 notes', desc:'Longer melodies with mixed note lengths', kind:'rhythm', rhy:'melody', patterns:RHY_MEL5, tol:.28, idx:IDX7, range:RP, len:5, input:'piano', noSpeed:true}
 ];
 // Fill in defaults so every level has the same shape (old levels list their degrees; newer ones their scale steps)
+// Steve (Nov 23 2026): no keyboard-only levels; the 123 / Keys button works on every level. The four old "Play it" levels
+// stay in the list so saved progress keeps its positions, but are hidden and skipped.
+[9, 10, 11, 12].forEach(i => { LEVELS[i].hidden = true; });
+const levelNo = i => { let n = 0; for (let k = 0; k <= i; k++) if (!LEVELS[k].hidden) n++; return n; };   // the number shown to Steve
+const nextVisible = i => { while (i < LEVELS.length-1 && LEVELS[i].hidden) i++; return i; };
 LEVELS.forEach(L => {
   L.kind = L.kind || 'notes';
   L.scales = L.scales || ['major'];
@@ -451,7 +456,7 @@ function normalize(s){
   s.settings = Object.assign(f.settings, s.settings||{}); if (!(s.settings.roundLen >= 10)) s.settings.roundLen = 12; s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
   const r = Object.assign(f, s);
   const last = LEVELS.length - 1;
-  r.current = Math.min(last, Math.max(0, r.current | 0)); r.unlocked = Math.min(last, Math.max(0, r.unlocked | 0));
+  r.current = nextVisible(Math.min(last, Math.max(0, r.current | 0))); r.unlocked = Math.min(last, Math.max(0, r.unlocked | 0));
   return r;
 }
 function load(){
@@ -821,7 +826,7 @@ function makeQuestion(){
   let lvl = S.current, review = false;
   const cur = LEVELS[S.current];
   // Review questions come from earlier levels of the same kind, played in the round's key, scale and octave.
-  const pool = []; for (let i=0;i<S.current;i++) if (S.mastered[i] !== undefined && LEVELS[i].kind === cur.kind && LEVELS[i].rhy === cur.rhy) pool.push(i);
+  const pool = []; for (let i=0;i<S.current;i++) if (!LEVELS[i].hidden && S.mastered[i] !== undefined && LEVELS[i].kind === cur.kind && LEVELS[i].rhy === cur.rhy) pool.push(i);
   if (pool.length && Math.random()*100 < S.settings.reviewPct){ lvl = pool[Math.floor(Math.random()*pool.length)]; review = true; }
   const L = LEVELS[lvl];
   startRoundIfNeeded();
@@ -1399,7 +1404,7 @@ async function exportProgress(){
 function showLevelUp(lvl){
   const nl = nextLevel(), next = S.mastered[nl] === undefined ? LEVELS[nl] : null;
   $('bLvlOk').style.display = next ? '' : 'none';
-  $('lvlOvTitle').textContent = `Level ${lvl+1} mastered!`;
+  $('lvlOvTitle').textContent = `Level ${levelNo(lvl)} mastered!`;
   $('lvlOvText').innerHTML = next ? `Up next: <b>${next.title}</b><br>${next.desc}` : 'You have finished every level. Keep the older ones sharp: review questions keep mixing them in.';
   $('lvlOv').classList.remove('hidden'); confetti();
 }
@@ -1467,13 +1472,13 @@ function stopCar(){
    ===================================================================== */
 let activeView = 'train';
 // The level to work on next: the first one not yet mastered (the last level if all are)
-function nextLevel(){ for (let i=0;i<LEVELS.length;i++) if (S.mastered[i] === undefined) return i; return LEVELS.length-1; }
+function nextLevel(){ for (let i=0;i<LEVELS.length;i++) if (!LEVELS[i].hidden && S.mastered[i] === undefined) return i; return LEVELS.length-1; }
 // Answers feed the shared degree bars, trouble spots and drilling only from mastered levels and the next level to master;
 // dabbling on a harder level only counts toward that level's own score.
 const sharedStats = lvl => S.mastered[lvl] !== undefined || lvl === nextLevel();
 function updateHeader(){
   const L = LEVELS[S.current], m = masteryInfo(S.current);
-  $('hLvlNum').textContent = 'L' + (S.current+1); $('hLvlTitle').textContent = L.title;
+  $('hLvlNum').textContent = 'L' + levelNo(S.current); $('hLvlTitle').textContent = L.title;
   $('hBar').style.width = (m.prog*100).toFixed(0) + '%'; $('hPct').textContent = S.mastered[S.current] !== undefined ? 'Mastered ✓' : (m.prog*100).toFixed(0) + '%';
   const done = S.mastered[S.current] !== undefined;
   $('hBarL').textContent = done ? 'You have mastered this level; extra practice is fine' : m.n < m.W ? `${m.n} of the ${m.W} answers needed so far` : `Accuracy ${(m.acc*100).toFixed(0)}%, need ${(m.target*100)|0}%`;
@@ -1549,7 +1554,7 @@ function renderSettings(){
       ${optSelect('breakEvery','Break reminder','Short sessions help you learn more than long ones', s.breakEvery, [[0,'Off'],[5,'After 5 minutes'],[10,'After 10 minutes'],[15,'After 15 minutes'],[20,'After 20 minutes']])}
     </div>
     <h2>Keyboard</h2><div class="card">
-      ${optSelect('answerWith','Answer with','Also the 123 / Keys button on the training screen. On the keyboard, any octave counts', s.answerWith || 'level', [['level','As each level says'],['pad','Number pad'],['piano','Keyboard']])}
+      ${optSelect('answerWith','Answer with','Works on every level. Also the 123 / Keys button on the training screen. On the keyboard, any octave counts', s.answerWith === 'piano' ? 'piano' : 'level', [['level','Number pad'],['piano','Keyboard']])}
       ${optToggle('labelKeys','Note names on keys','Turn off once you know the keyboard', s.labelKeys)}
       ${optToggle('markTonic','Mark the tonic','Dot on the key’s home note', s.markTonic)}
     </div>
@@ -1582,10 +1587,11 @@ function renderProgress(){
   const m = masteryInfo(S.current);
   let lv = '';
   LEVELS.forEach((L,i) => {
+    if (L.hidden) return;
     const done = S.mastered[i] !== undefined, cur = i === S.current, locked = false, nxt = i === nextLevel() && !done;
     const info = !done ? masteryInfo(i) : null;
     lv += `<div class="lv ${done?'done':''} ${cur?'cur':''} ${locked?'locked':''}">
-      <div class="n">${done ? '✓' : i+1}</div>
+      <div class="n">${done ? '✓' : levelNo(i)}</div>
       <div class="t"><b>${L.title}</b><div>${L.desc}${info && info.n ? ` · ${(info.acc*100).toFixed(0)}% of last ${info.n}` : ''}</div></div>
       ${!cur ? `<button class="act" data-lv="${i}">${nxt ? 'Up next · Practice' : 'Practice'}</button>` : cur ? '<span class="act" style="color:var(--dim)">Now</span>' : ''}</div>`;
   });
@@ -1669,7 +1675,7 @@ document.addEventListener('click', e => {
     const v = Math.min(+st.dataset.max, Math.max(+st.dataset.min, Math.round((getPath(id) + inc*(+sb.dataset.d))*100)/100));
     setPath(id, v); st.querySelector('span').textContent = v + unit; return; }
   const lb = e.target.closest('[data-lv]');
-  if (lb){ S.current = +lb.dataset.lv; save(); updateHeader(); T.cadKey = null; showView('train'); toast(`Practicing L${S.current+1}`); return; }
+  if (lb){ S.current = +lb.dataset.lv; save(); updateHeader(); T.cadKey = null; showView('train'); toast(`Practicing L${levelNo(S.current)}`); return; }
   if (e.target.id === 'bSyncConnect'){ const v = $('gTok').value.trim(); if (v) syncConnect(v); return; }
   if (e.target.id === 'bSyncNow'){ syncNow(); return; }
   if (e.target.id === 'bSyncOff'){ if (confirm('Stop syncing on this device? Your gist on GitHub is kept.')){ SY = {}; saveSync(); renderSettings(); toast('Sync is off on this device'); } return; }
@@ -1754,7 +1760,7 @@ function adopt(remote){
 }
 function askWhich(remote){
   if (!$('modal').classList.contains('hidden')) return;
-  const r = remote.state || {}, desc = (st, t) => `L${(st.current||0)+1}, ${st.total||0} answers, saved ${ago(t)}`;
+  const r = remote.state || {}, desc = (st, t) => `L${levelNo(Math.min(LEVELS.length-1, st.current||0))}, ${st.total||0} answers, saved ${ago(t)}`;
   modal({ icon:'🔄', title:'Which progress should I keep?',
     text: `Progress changed on this ${deviceName()} and on your ${remote.device || 'other device'}.<br><br><b>This ${deviceName()}:</b> ${desc(S, S.updatedAt)}<br><b>${remote.device || 'Other device'}:</b> ${desc(r, remote.updatedAt)}`,
     buttons: [ { label: `Keep this ${deviceName()}’s`, fn: () => { S.updatedAt = Date.now(); saveRaw(); syncPush().then(() => toast('Synced')).catch(syncErr); } },

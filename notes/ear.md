@@ -59,18 +59,21 @@ to melodic dictation.
 
 ## Level ladder (LEVELS in index.html)
 
-36 levels. New levels are only ever appended, because saved progress is indexed by level position (`S.v` stays 1; `normalize()` clamps the pointers). Old progress files load unchanged.
+36 entries, 32 shown. New levels are only ever appended, because saved progress is indexed by position in the list (`S.v` stays 1). Four entries are hidden (`hidden:true`, positions 10–13, the old keyboard-only "Play it" levels): they stay in the list so saved progress keeps its positions, but they are skipped everywhere. `levelNo(i)` gives the number shown to Steve; the numbers below are the shown ones.
+
+Steve's decision (Nov 23 2026): no keyboard-only levels. The 123 / Keys button (setting `answerWith`) works on every level except sing and tap; the default is the number pad.
 
 1. Home base: 1 3 5 (key of C) · 2. Add 2 and 6 (pentatonic) · 3. Add 4 · 4. Add 7, full major scale
    Steve's decision (Nov 22 2026): other keys come in early so the ear never leans on C. Level 1 stays in C; level 2 uses C, G, F; level 3 adds D and B♭ (`KEYS_B`); level 4 adds A and E♭ (`KEYS_C`). The key still changes per round.
 5. New key every round (all 12) · 6. Three octaves, new key every round
-7–9. Two-, three-, four-note phrases (numbers)
-10–14. Keyboard ("Play it"): single notes, 2, 3, 4 notes, then 6-note melodic dictation
-15–20. Minor and modes (`scales`, `idx` = scale positions): minor pentatonic, minor full, minor 3-note phrases, Dorian and Mixolydian, every mode (major, minor, Dorian, Mixolydian, Lydian, Phrygian), modes 3-note phrases. Pad labels follow the scale (♭3, ♭6, ♭7…); voice answers say the position number ("seven" = ♭7).
-21–24. Chromatic (`chroma`): ♯4 and ♭7, add ♭3 and ♭6, all twelve (12-button pad; voice off), 3-note phrases. Wrong chromatic answers still resolve correctly (`resolveNotes`).
-25–29. Chords (`kind:'chord'`): roots I IV V, roots on every degree, inversions, arpeggios (name the three notes), block chords (name the notes lowest first).
-30–32. Sing it back (`kind:'sing'`): pentatonic, all seven, 3-note phrases. Microphone pitch detection (`Sing`, YIN `detectPitch`), any octave counts. Uses the same play-and-record audio mode as voice answers.
-33–36. Rhythm (`kind:'rhythm'`): tap the rhythm (quarters and eighths, then off-beats and dotted), then melody with rhythm on the keyboard (3 and 5 notes). Graded on the gaps between taps (tolerance `tol`), not on absolute time.
+7–9. Two-, three-, four-note phrases · 10. Six-note melodies
+11–16. Minor and modes (`scales`, `idx` = scale positions): minor pentatonic, full minor, minor 3-note phrases, Dorian and Mixolydian, every mode (major, minor, Dorian, Mixolydian, Lydian, Phrygian), modes 3-note phrases. Pad labels follow the scale (♭3, ♭6, ♭7…); voice answers say the position number ("seven" = ♭7).
+17–20. Chromatic (`chroma`): ♯4 and ♭7, add ♭3 and ♭6, all twelve (12-button pad; voice off), 3-note phrases. Wrong chromatic answers still resolve correctly (`resolveNotes`).
+21–25. Chords (`kind:'chord'`): roots I IV V, roots on every degree, inversions, arpeggios (name the three notes), block chords (name the notes lowest first).
+26–28. Sing it back (`kind:'sing'`): pentatonic, all seven, 3-note phrases. Microphone pitch detection (`Sing`, YIN `detectPitch`), any octave counts. Uses the same play-and-record audio mode as voice answers.
+29–32. Rhythm (`kind:'rhythm'`): tap the rhythm (quarters and eighths, then off-beats and dotted), then melody with rhythm (3 and 5 notes; keyboard or pad). Graded on the gaps between taps (tolerance `tol`), not on absolute time.
+
+Pending idea Steve liked (not built yet): stricter mastery (about 30 answers, confirmed again on a second day), smaller bridge steps before big jumps, and a little review of the previous level at the start of a new one.
 
 Tolerances, `limitMult` (speed limit multiplier: 1.25 to 3 on harder levels, 0 = no speed test on rhythm) and the key pools are my choices, not Steve's. Sing and rhythm levels have NOT been tried on his phone yet (microphone permission, audio mode, tap timing); expect tuning.
 
