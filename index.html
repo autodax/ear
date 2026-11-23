@@ -37,6 +37,8 @@ header{padding:10px 16px 8px}
 .today{color:var(--dim);font-size:13px;white-space:nowrap}
 .bar{height:6px;background:var(--panel2);border-radius:3px;margin-top:8px;overflow:hidden}
 .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .4s}
+.bar-title{display:flex;justify-content:space-between;color:var(--dim);font-size:12px;font-weight:600;margin-top:10px}
+.bar-title+.bar{margin-top:4px}
 .bar-label{display:flex;justify-content:space-between;color:var(--faint);font-size:12px;margin-top:4px}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px 16px}
 .view{display:none}.view.on{display:block}
@@ -157,8 +159,6 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 .sheet h1{margin:0 0 6px;font-size:26px}
 .sheet p{color:var(--dim);margin:8px 0 0;font-size:15px}
 #mBtns .go{margin-top:10px}
-.loadbar{height:4px;background:var(--panel2);border-radius:2px;margin:18px 0 4px;overflow:hidden}
-.loadbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
 .trophy{font-size:54px;line-height:1}
 .confetti{position:fixed;top:-12px;width:8px;height:14px;z-index:60;pointer-events:none;animation:fall 1.6s ease-in forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.7}}
@@ -173,6 +173,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
       <div class="lvl-name"><span class="lvl-num" id="hLvlNum">L1</span><span id="hLvlTitle">—</span></div>
       <div class="today" id="hToday"></div>
     </div>
+    <div class="bar-title"><span>Mastery of this level</span><span id="hPct"></span></div>
     <div class="bar"><i id="hBar"></i></div>
     <div class="bar-label"><span id="hBarL"></span><span id="hBarR"></span></div>
   </header>
@@ -234,15 +235,6 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
   </nav>
 </div>
 
-<div class="overlay" id="startOv">
-  <div class="sheet">
-    <h1>Ear Trainer</h1>
-    <p>Hear scale degrees in context, from single notes to whole melodies on the keyboard.</p>
-    <div class="loadbar"><i id="loadBar"></i></div>
-    <p id="loadTxt" style="font-size:13px">Loading piano… (you can start now)</p>
-    <button class="go" id="bBegin">Tap to begin</button>
-  </div>
-</div>
 <div class="overlay hidden" id="lvlOv">
   <div class="sheet">
     <div class="trophy">🏆</div>
@@ -264,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-23.1';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-23.2';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -554,6 +546,19 @@ const A = {
     if (this.ctx.state === 'suspended') await this.ctx.resume().catch(()=>{});
   },
   decodeAll(){ for (const k of Object.keys(this.raw)) this.decodeOne(k); },
+  // Decode the downloaded sounds before the first tap, using a throwaway engine that never plays anything, so the first note is already the piano.
+  async decodeEarly(){
+    if (this.ctx || this.early) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    let c; try { c = this.early = new AC(); } catch(e){ return; }
+    try {
+      await Promise.all(Object.keys(this.raw).map(async k => {
+        const raw = this.raw[k]; if (!raw) return; delete this.raw[k];
+        try { const b = await c.decodeAudioData(raw); if (b) this.buffers[k] = b; } catch(e){}
+      }));
+    } catch(e){}
+    this.early = null; try { c.close(); } catch(e){}
+  },
   get synth(){ return Object.keys(this.buffers).length < SAMPLE_LIST.length * 0.6; },
   now(){ return this.ctx.currentTime; },
   note(midi, t, dur, vel=0.8){
@@ -673,7 +678,6 @@ function applyUpdateIfIdle(){
   // Load the new version from an address iOS hasn't cached (a plain reload can return the old page).
   const go = () => { try { sessionStorage.setItem('ear.updateTried', pendingUpdate); } catch(e){}
     location.replace(location.pathname + '?v=' + encodeURIComponent(pendingUpdate)); };
-  if (!$('startOv').classList.contains('hidden')){ go(); return; }
   toast('Updating to the latest version…'); setTimeout(go, 900);
 }
 document.addEventListener('visibilitychange', () => {
@@ -1470,13 +1474,13 @@ const sharedStats = lvl => S.mastered[lvl] !== undefined || lvl === nextLevel();
 function updateHeader(){
   const L = LEVELS[S.current], m = masteryInfo(S.current);
   $('hLvlNum').textContent = 'L' + (S.current+1); $('hLvlTitle').textContent = L.title;
-  $('hBar').style.width = (m.prog*100).toFixed(0) + '%';
+  $('hBar').style.width = (m.prog*100).toFixed(0) + '%'; $('hPct').textContent = S.mastered[S.current] !== undefined ? 'Mastered ✓' : (m.prog*100).toFixed(0) + '%';
   const done = S.mastered[S.current] !== undefined;
-  $('hBarL').textContent = done ? 'Mastered: practicing' : m.n < m.W ? `Mastery: ${m.n}/${m.W} answers` : `Accuracy ${(m.acc*100).toFixed(0)}% (need ${(m.target*100)|0}%)`;
+  $('hBarL').textContent = done ? 'You have mastered this level; extra practice is fine' : m.n < m.W ? `${m.n} of the ${m.W} answers needed so far` : `Accuracy ${(m.acc*100).toFixed(0)}%, need ${(m.target*100)|0}%`;
   $('hBarR').textContent = done || m.n < m.W/2 ? '' : (!m.degOk ? 'needs work: ' + m.degs.filter(x=>!x.ok).map(x=>x.d).join(' ')
     : (S.settings.showFeedback !== false && !m.speedOk && isFinite(m.med)) ? `speed ${(m.med/1000).toFixed(1)}s, goal ${m.limit.toFixed(1)}s` : '');
   const td = S.days[today()] || 0;
-  $('hToday').textContent = td >= S.settings.dailyGoal ? `Today ${td} · goal ✓` : `Today ${td}/${S.settings.dailyGoal}`;
+  $('hToday').textContent = td >= S.settings.dailyGoal ? `Answered today: ${td} · goal ✓` : `Answered today: ${td}/${S.settings.dailyGoal}`;
 }
 function showView(v){
   activeView = v;
@@ -1790,23 +1794,17 @@ function syncCardHTML(){
 /* =====================================================================
    BOOT
    ===================================================================== */
-A.prefetch(p => { $('loadBar').style.width = (p*100).toFixed(0) + "%"; })
- .then(failed => { $('loadTxt').textContent = failed > SAMPLE_LIST.length*0.4 ? 'Piano samples unavailable (offline?). A simple synth will play.' : 'Piano ready'; });
-$('bBegin').addEventListener('click', async () => {
-  if (A.released){   // coming back from the stop screen
-    A.engage(); $('startOv').classList.add('hidden'); syncPull().catch(syncErr); return;
-  }
-  $('bBegin').disabled = true; $('loadTxt').textContent = 'Starting audio…';
-  unlockIOS();
-  await A.start();
-  A.decodeAll();
-  $('startOv').classList.add('hidden');
-  syncPull().catch(syncErr);
+// The app opens straight onto Train. Piano sounds start downloading at once; the audio engine itself is switched on by the
+// first tap (Start, a key, Car mode), because iOS only allows sound after a tap.
+A.released = true;
+A.prefetch(() => {}).then(failed => {
+  if (failed > SAMPLE_LIST.length*0.4) toast('Piano samples could not load, so a simple synth is playing instead');
+  A.decodeEarly();
+});
+setTimeout(() => { syncPull().catch(syncErr);
   if (backupDue()) modal({ icon:'💾', title:'Back up your progress?',
     text:`${S.lastBackup ? 'Your last backup was ' + daysBetween(S.lastBackup, today()) + ' days ago.' : 'You haven’t backed up yet.'} Save a copy to Files or iCloud Drive so it can’t be lost.`,
-    buttons:[{label:'Back up now', fn: () => exportProgress()}, {label:'Later', ghost:true, fn: snoozeBackup}] });
-  A.fetching.then(failed => { if (failed > SAMPLE_LIST.length*0.4) toast('Piano samples could not load, so a simple synth is playing instead'); });
-});
+    buttons:[{label:'Back up now', fn: () => exportProgress()}, {label:'Later', ghost:true, fn: snoozeBackup}] }); }, 600);
 // Stop, "Done for today" and "Take a break": let go of the audio channel and go back to the start screen.
 /* ===== VOICE ANSWERS (experiment) =====================================================
    Say a scale number instead of tapping. Easy to remove: delete this block, the "Voice" card in renderSettings,
@@ -1981,9 +1979,7 @@ document.addEventListener('visibilitychange', () => {
 function goToStartScreen(){
   kill(T.token); kill(T.aux); T.phase = 'idle'; voiceStop(); Sing.stop();   // VOICE
   A.release();
-  $('bBegin').disabled = false; $('bBegin').textContent = 'Tap to begin';
-  $('loadTxt').textContent = 'Stopped. Progress is saved.';
-  $('startOv').classList.remove('hidden');
+  showView('train'); resetTrainIdle();
 }
 function isStandalone(){
   return !!navigator.standalone || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;

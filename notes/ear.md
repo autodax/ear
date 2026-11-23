@@ -49,7 +49,9 @@ to melodic dictation.
 - A break reminder after a set time of practice (setting, default 10 min; "Take a break" or "Keep going").
 - No isolated interval drills (two notes with no key). Everything is heard in the context of a key.
 - Stop, "Done for today" and "Take a break" release the iPhone's audio channel (so the app leaves the
-  Dynamic Island and lock screen) and go back to the Start screen; tapping "Tap to begin" brings audio back.
+  Dynamic Island and lock screen) and go back to the Train screen's idle state; tapping Start brings audio back.
+- No start screen (Steve's decision, Nov 23 2026): the app opens straight onto Train. Piano samples download and are decoded at once with a throwaway audio engine (`A.decodeEarly()`); the real engine (`A.engage()`) switches on at the first tap (Start, a key, Car mode), since iOS only allows sound after a tap. Startup extras (sync pull, backup reminder) run shortly after opening. Not tried on the phone yet: confirm the first note after a cold open is the piano, not the synth, and that nothing shows on the lock screen before the first tap.
+- The header bar is labelled "Mastery of this level" with a percent; the line under it says what's still needed. It is a blend (answers recorded, accuracy against the goal, per-note accuracy, speed), so it can move down after a miss. "Answered today" (daily goal) sits separately at the top right.
   iOS apps can't quit themselves, so releasing the audio is the most the app can do.
 - iPhone only for now.
 - Sync: a private GitHub gist, one user. Multi-user sign-in (Firebase) was discussed and put off.
@@ -136,7 +138,7 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
   app removed and re-added.
 - A playing audio session shows in the Dynamic Island and on the lock screen. `A.release()` removes the
   silent looping element entirely (a merely paused one stays on the lock screen), sets `audioSession.type` to `auto` and closes the AudioContext (suspending it was not enough; decoded samples are kept); `A.engage()`
-  rebuilds it (`A.build()`) and runs from the Start/Begin taps and from `A.seq`/`A.note`. Not testable in headless Chrome
+  rebuilds it (`A.build()`) and runs from the Start taps and from `A.seq`/`A.note`. Not testable in headless Chrome
   beyond the states; check on the phone after changing it.
   Even after a full release the lock screen still lists the app, like any music app that has played
   (iOS keeps the last media app there). Steve accepted that; don't spend more effort trying to remove it.
