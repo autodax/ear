@@ -73,7 +73,6 @@ Steve's decision (Nov 23 2026): no keyboard-only levels. The 123 / Keys button (
 26–28. Sing it back (`kind:'sing'`): pentatonic, all seven, 3-note phrases. Microphone pitch detection (`Sing`, YIN `detectPitch`), any octave counts. Uses the same play-and-record audio mode as voice answers.
 29–32. Rhythm (`kind:'rhythm'`): tap the rhythm (quarters and eighths, then off-beats and dotted), then melody with rhythm (3 and 5 notes; keyboard or pad). Graded on the gaps between taps (tolerance `tol`), not on absolute time.
 
-Pending idea Steve liked (not built yet): stricter mastery (about 30 answers, confirmed again on a second day), smaller bridge steps before big jumps, and a little review of the previous level at the start of a new one.
 
 Tolerances, `limitMult` (speed limit multiplier: 1.25 to 3 on harder levels, 0 = no speed test on rhythm) and the key pools are my choices, not Steve's. Sing and rhythm levels have NOT been tried on his phone yet (microphone permission, audio mode, tap timing); expect tuning.
 
@@ -156,3 +155,12 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
 - Keyboard levels: whether to require the exact octave, and a landscape keyboard with about
   three octaves. Steve will decide when he reaches the keyboard levels.
 - Tune sing-back and rhythm after Steve tries them on the phone. Possible later: other chord qualities, 7th chords, rhythm in dictation with sung answers.
+
+## To do: make learning stick before big jumps (Steve said yes, Nov 23 2026; none built yet)
+
+Steve felt he moved from the phrase levels to melodies, and to the keyboard, too fast.
+
+1. **Stricter mastery, on separate days.** A level counts as mastered only after about 30 answers at the target accuracy, then confirmed again on a different day. Stops one good run from counting.
+2. **Smaller steps before big jumps.** Phrase levels start with two notes from 1, 3 and 5 in one key, then two notes from the full scale, then three, and so on. A stepping stone between the pad and the keyboard (one note played on the keyboard in the key just heard). A new mode starts as one mode in one key, then the mix. New steps must be added without moving saved level positions (hidden entries and `levelNo()` already allow a display order).
+3. **Mix in older material at the start of a new level.** For the first few sessions on a big new skill, about a third of the questions come from the level before it.
+4. **Go easier at first on new skills.** In the first sessions of a new level, replays are free and the tempo is slower; it tightens later.
