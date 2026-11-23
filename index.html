@@ -173,7 +173,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
       <div class="lvl-name"><span class="lvl-num" id="hLvlNum">L1</span><span id="hLvlTitle">—</span></div>
       <div class="today" id="hToday"></div>
     </div>
-    <div class="bar-title"><span>Mastery of this level</span><span id="hPct"></span></div>
+    <div class="bar-title"><span id="hBarT">Mastery of this level</span><span id="hPct"></span></div>
     <div class="bar"><i id="hBar"></i></div>
     <div class="bar-label"><span id="hBarL"></span><span id="hBarR"></span></div>
   </header>
@@ -256,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-23.4';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-23.5';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -369,20 +369,20 @@ const RHY_SYNC = [[.5,1,1,1,.5],[1.5,.5,1.5,.5],[.5,1,.5,1,1],[1,.5,1,.5,1],[.5,
 const RHY_MEL3 = [[1,1,2],[2,1,1],[1,2,1],[1.5,.5,2],[.5,.5,3],[1,1,1]];
 const RHY_MEL5 = [[1,.5,.5,1,1],[.5,.5,1,1,1],[1,1,.5,.5,1],[1.5,.5,1,.5,.5],[1,1,1,.5,.5],[.5,1,.5,1,1]];
 const LEVELS = [
-  {title:'Home base: 1 3 5',    desc:'Key of C · one octave, which moves every round', degrees:['1','3','5'], range:R1, keys:[0], len:1, input:'numbers'},
-  {title:'Pentatonic: add 2, 6', desc:'1 2 3 5 6 · keys C, G and F. No 4 or 7 yet, so every note sounds stable', degrees:['1','2','3','5','6'], range:R1, keys:KEYS_A, len:1, input:'numbers'},
-  {title:'Add 4',                desc:'1–6 · keys C, G, F, D and B♭',     degrees:['1','2','3','4','5','6'], range:R1, keys:KEYS_B, len:1, input:'numbers'},
-  {title:'Add 7: full scale', desc:'All seven · seven keys, still no sharps beyond A',          degrees:ALL7, range:R1, keys:KEYS_C, len:1, input:'numbers'},
-  {title:'New key every round',  desc:'One octave · new key and octave each round', degrees:ALL7, range:R1, len:1, input:'numbers'},
-  {title:'3 octaves, new keys', desc:'Low to high · new key each round', degrees:ALL7, range:R3, len:1, input:'numbers'},
-  {title:'Two-note phrases',     desc:'Name both notes in order',         degrees:ALL7, range:RP, len:2, input:'numbers'},
-  {title:'Three-note phrases',   desc:'Short melodic fragments',          degrees:ALL7, range:RP, len:3, input:'numbers'},
-  {title:'Four-note phrases',    desc:'Longer fragments',                 degrees:ALL7, range:RP, len:4, input:'numbers'},
+  {title:'Home base: 1 3 5',    desc:'Key of C · one octave, which moves every round', idx:[0,2,4], range:R1, keys:[0], len:1, input:'numbers'},
+  {title:'Pentatonic: add 2, 6', desc:() => `${lbl(modeScale(), [0,1,2,4,5]).join(' ')} · keys C, G and F. No 4th or 7th note yet`, idx:[0,1,2,4,5], range:R1, keys:KEYS_A, len:1, input:'numbers'},
+  {title:'Add 4',                desc:'The first six notes · keys C, G, F, D and B♭', idx:[0,1,2,3,4,5], range:R1, keys:KEYS_B, len:1, input:'numbers'},
+  {title:'Add 7: full scale', desc:'All seven notes · seven keys, still no sharps beyond A',          idx:IDX7, range:R1, keys:KEYS_C, len:1, input:'numbers'},
+  {title:'New key every round',  desc:'One octave · new key and octave each round', idx:IDX7, range:R1, len:1, input:'numbers'},
+  {title:'3 octaves, new keys', desc:'Low to high · new key each round', idx:IDX7, range:R3, len:1, input:'numbers'},
+  {title:'Two-note phrases',     desc:'Name both notes in order',         idx:IDX7, range:RP, len:2, input:'numbers'},
+  {title:'Three-note phrases',   desc:'Short melodic fragments',          idx:IDX7, range:RP, len:3, input:'numbers'},
+  {title:'Four-note phrases',    desc:'Longer fragments',                 idx:IDX7, range:RP, len:4, input:'numbers'},
   {title:'Play it: single notes', desc:'Find the note on the keyboard in the key you heard', degrees:ALL7, range:RP, len:1, input:'piano'},
   {title:'Play it: two notes',   desc:'Keyboard · two-note phrases',      degrees:ALL7, range:RP, len:2, input:'piano'},
   {title:'Play it: three notes', desc:'Keyboard · three-note phrases',    degrees:ALL7, range:RP, len:3, input:'piano'},
   {title:'Play it: four notes',  desc:'Keyboard · four-note phrases',     degrees:ALL7, range:RP, len:4, input:'piano'},
-  {title:'Six-note melodies',    desc:'Long melodic fragments',           degrees:ALL7, range:RP, len:6, input:'numbers'},
+  {title:'Six-note melodies',    desc:'Long melodic fragments',           idx:IDX7, range:RP, len:6, input:'numbers'},
   // ---- Minor keys and modes (labels follow the scale: 1 2 ♭3 4 5 ♭6 ♭7 in minor)
   {title:'Minor: pentatonic',    desc:'Minor keys · 1 ♭3 4 5 ♭7. The same five-note shape, now in minor', scales:['minor'], idx:[0,2,3,4,6], range:R1, len:1, input:'numbers'},
   {title:'Minor: full scale',    desc:'Natural minor · 1 2 ♭3 4 5 ♭6 ♭7', scales:['minor'], idx:IDX7, range:R1, len:1, input:'numbers'},
@@ -391,19 +391,19 @@ const LEVELS = [
   {title:'Every mode',           desc:'Major, minor, Dorian, Mixolydian, Lydian (♯4) and Phrygian (♭2)', scales:ALLSCALES, idx:IDX7, range:R1, len:1, input:'numbers', limitMult:1.25},
   {title:'Modes: three-note phrases', desc:'Any of the six scales · short fragments', scales:ALLSCALES, idx:IDX7, range:RP, len:3, input:'numbers', limitMult:1.25},
   // ---- Chromatic notes (major key plus notes outside the scale). The pad shows all twelve.
-  {title:'Chromatic: ♯4 and ♭7', desc:'The major scale plus its two most common outsiders', chroma:true, degrees:['1','2','3','4','♯4','5','6','♭7','7'], range:R1, len:1, input:'numbers', limitMult:1.5},
-  {title:'Chromatic: add ♭3 and ♭6', desc:'The notes minor borrows from major', chroma:true, degrees:['1','2','♭3','3','4','♯4','5','♭6','6','♭7','7'], range:R1, len:1, input:'numbers', limitMult:1.5},
-  {title:'Chromatic: all twelve', desc:'Every note, including ♭2', chroma:true, degrees:CHROMA, range:R1, len:1, input:'numbers', limitMult:1.5},
-  {title:'Chromatic: three-note phrases', desc:'Fragments that wander outside the scale', chroma:true, degrees:CHROMA, range:RP, len:3, input:'numbers', limitMult:1.5},
+  {title:'Chromatic: first outside notes', desc:'The scale plus its two most common outsiders', chroma:true, outs:2, range:R1, len:1, input:'numbers', limitMult:1.5},
+  {title:'Chromatic: more outside notes', desc:'Two more notes from outside the scale', chroma:true, outs:4, range:R1, len:1, input:'numbers', limitMult:1.5},
+  {title:'Chromatic: all twelve', desc:'Every note, including the last outsider', chroma:true, outs:5, range:R1, len:1, input:'numbers', limitMult:1.5},
+  {title:'Chromatic: three-note phrases', desc:'Fragments that wander outside the scale', chroma:true, outs:5, range:RP, len:3, input:'numbers', limitMult:1.5},
   // ---- Chords (heard in the key; answer with scale degrees)
-  {title:'Chord roots: I, IV, V', desc:'A chord plays. Name the scale degree it is built on', kind:'chord', gen:'root', roots:[0,3,4], degrees:['1','4','5'], range:R1, len:1, input:'numbers', limitMult:1.5},
-  {title:'Chord roots: every chord', desc:'Chords on all seven degrees', kind:'chord', gen:'root', roots:IDX7, degrees:ALL7, range:R1, len:1, input:'numbers', limitMult:1.5},
-  {title:'Chord roots: inversions', desc:'The chord can be turned upside down, so the lowest note may not be the root', kind:'chord', gen:'root', inv:true, roots:IDX7, degrees:ALL7, range:R1, len:1, input:'numbers', limitMult:1.75},
-  {title:'Chord tones: arpeggios', desc:'A chord is played one note at a time. Name its three notes', kind:'chord', gen:'arp', roots:IDX7, degrees:ALL7, range:RP, len:3, input:'numbers'},
-  {title:'Chord tones: block chords', desc:'Name the three notes of a chord played together, lowest first', kind:'chord', gen:'block', roots:IDX7, degrees:ALL7, range:RP, len:3, input:'numbers', limitMult:1.25},
+  {title:'Chord roots: 1, 4, 5', desc:'A chord plays. Name the scale degree it is built on', kind:'chord', gen:'root', roots:[0,3,4], range:R1, len:1, input:'numbers', limitMult:1.5},
+  {title:'Chord roots: every chord', desc:'Chords on all seven degrees', kind:'chord', gen:'root', roots:IDX7, range:R1, len:1, input:'numbers', limitMult:1.5},
+  {title:'Chord roots: inversions', desc:'The chord can be turned upside down, so the lowest note may not be the root', kind:'chord', gen:'root', inv:true, roots:IDX7, range:R1, len:1, input:'numbers', limitMult:1.75},
+  {title:'Chord tones: arpeggios', desc:'A chord is played one note at a time. Name its three notes', kind:'chord', gen:'arp', roots:IDX7, idx:IDX7, range:RP, len:3, input:'numbers'},
+  {title:'Chord tones: block chords', desc:'Name the three notes of a chord played together, lowest first', kind:'chord', gen:'block', roots:IDX7, range:RP, len:3, input:'numbers', limitMult:1.25},
   // ---- Singing back (needs the microphone)
   {title:'Sing it back: pentatonic', desc:'Hear a note in the key, then sing it. Any octave counts. Uses the microphone', kind:'sing', idx:[0,1,2,4,5], range:R1, len:1, input:'sing', limitMult:3},
-  {title:'Sing it back: all seven', desc:'Sing any note of the major scale', kind:'sing', idx:IDX7, range:R1, len:1, input:'sing', limitMult:3},
+  {title:'Sing it back: all seven', desc:'Sing any note of the scale', kind:'sing', idx:IDX7, range:R1, len:1, input:'sing', limitMult:3},
   {title:'Sing back: three-note phrases', desc:'Sing the whole fragment, one steady note at a time', kind:'sing', idx:IDX7, range:RP, len:3, input:'sing', limitMult:3},
   // ---- Rhythm
   {title:'Tap the rhythm',       desc:'Count in, listen, then tap the rhythm back. Quarter and eighth notes', kind:'rhythm', rhy:'tap', patterns:RHY_BASIC, tol:.25, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
@@ -414,19 +414,45 @@ const LEVELS = [
 // Fill in defaults so every level has the same shape (old levels list their degrees; newer ones their scale steps)
 // Steve (Nov 23 2026): no keyboard-only levels; the 123 / Keys button works on every level. The four old "Play it" levels
 // stay in the list so saved progress keeps its positions, but are hidden and skipped.
-[9, 10, 11, 12].forEach(i => { LEVELS[i].hidden = true; });
+[9, 10, 11, 12, 14, 15, 16, 17, 18, 19].forEach(i => { LEVELS[i].hidden = true; });   // 14-19: the old fixed minor/modes levels, replaced by the Mode setting
 const levelNo = i => { let n = 0; for (let k = 0; k <= i; k++) if (!LEVELS[k].hidden) n++; return n; };   // the number shown to Steve
 const nextVisible = i => { while (i < LEVELS.length-1 && LEVELS[i].hidden) i++; return i; };
+// The mode (scale) chosen in Settings; the whole ladder is heard and named in it. Each mode keeps its own progress.
+const modeScale = () => (typeof S !== 'undefined' && S && SCALES[S.mode] ? S.mode : 'major');
+// Notes outside a scale, most common first; a chromatic level adds the first `outs` of them to the scale's own notes.
+const OUT_ORDER = ['♭7','7','♯4','♭3','3','♭6','6','♭2','2','4'];
+function chromaDegrees(scale, outs){
+  const own = SCALES[scale].labels, out = OUT_ORDER.filter(l => CHROMA.includes(l) && !own.includes(l)).slice(0, outs);
+  return CHROMA.filter(l => own.includes(l) || out.includes(l));
+}
+// Where an outside note sits relative to a scale: the scale step with the same number, lowered or raised by a semitone.
+function chromaPos(scale, label){
+  const v = CHROMA.indexOf(label); if (v < 0) return null;
+  const st = SCALES[scale].steps, n = parseInt(label.replace(/[^0-9]/g,''), 10) - 1;
+  for (const c of [n, n-1, n+1]){ const sc = mod(c,7);
+    if (mod(st[sc]+1,12) === v) return [sc, 1];
+    if (mod(st[sc]-1,12) === v) return [sc, -1]; }
+  return null;
+}
+const descOf = L => typeof L.desc === 'function' ? L.desc() : L.desc;
 LEVELS.forEach(L => {
   L.kind = L.kind || 'notes';
-  L.scales = L.scales || ['major'];
   L.keys = L.keys || ALLKEYS;
-  if (L.idx && !L.degrees) L.degrees = labelUnion(L.scales, L.idx);
-  if (!L.idx && L.degrees && !L.chroma && L.kind === 'notes') L.idx = L.degrees.map(d => +d - 1);
-  if (!L.degrees) L.degrees = [];
+  if (L.kind === 'chord') L.idx = L.roots;
+  if (L.hidden){
+    L.scales = L.scales || ['major'];
+    if (L.idx && !L.degrees) L.degrees = labelUnion(L.scales, L.idx);
+    if (!L.idx && L.degrees && !L.chroma && L.kind === 'notes') L.idx = L.degrees.map(d => +d - 1);
+    if (!L.degrees) L.degrees = [];
+    return;
+  }
+  Object.defineProperty(L, 'scales', { get: () => [modeScale()], configurable:true });
+  if (L.chroma) Object.defineProperty(L, 'degrees', { get: () => chromaDegrees(modeScale(), L.outs), configurable:true });
+  else if (L.idx) Object.defineProperty(L, 'degrees', { get: () => lbl(modeScale(), L.idx), configurable:true });
+  else if (!L.degrees) L.degrees = [];
 });
 // The labels a level uses within one scale (in the scale's own wording: ♭3 in minor)
-const levelLabels = (L, scale) => L.chroma || !L.idx ? L.degrees : L.idx.map(i => SCALES[scale].labels[i]);
+const levelLabels = (L, scale) => L.chroma ? chromaDegrees(scale, L.outs) : !L.idx ? L.degrees : L.idx.map(i => SCALES[scale].labels[i]);
 const COMING = [];
 const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions per round (key and octave stay put)
 
@@ -440,7 +466,7 @@ const DEFAULT_SETTINGS = {
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
 function freshState(){
-  return { v:1, current:0, unlocked:0, mastered:{}, hist:{}, levelDeg:{}, deg:{}, conf:{},
+  return { v:1, mode:'major', modeStore:{}, current:0, unlocked:0, mastered:{}, hist:{}, levelDeg:{}, deg:{}, conf:{},
            xp:0, total:0, bestStreak:0, days:{}, settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) };
 }
 let S = load();
@@ -455,6 +481,8 @@ function normalize(s){
   }
   s.settings = Object.assign(f.settings, s.settings||{}); if (!(s.settings.roundLen >= 10)) s.settings.roundLen = 12; s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
   const r = Object.assign(f, s);
+  if (!SCALES[r.mode]) r.mode = 'major';
+  if (!r.modeStore || typeof r.modeStore !== 'object') r.modeStore = {};
   const last = LEVELS.length - 1;
   r.current = nextVisible(Math.min(last, Math.max(0, r.current | 0))); r.unlocked = Math.min(last, Math.max(0, r.unlocked | 0));
   return r;
@@ -740,7 +768,7 @@ function weightedPick(items, weights){
 function positionsFor(label, range, scale='major'){
   const out = [], labs = SCALES[scale].labels;
   if (labs.includes(label)){ for (let s = range[0]; s <= range[1]; s++) if (labs[mod(s,7)] === label) out.push([s,0]); }
-  else if (CHROMA_POS[label]){ const [s0,a] = CHROMA_POS[label]; for (let s = s0 - 14; s <= range[1]; s += 7) if (s >= range[0]) out.push([s,a]); }
+  else { const cp = chromaPos(scale, label); if (cp){ const [s0,a] = cp; for (let s = s0 - 14; s <= range[1]; s += 7) if (s >= range[0]) out.push([s,a]); } }
   return out;
 }
 
@@ -778,7 +806,7 @@ function pickPhrase(lvl, scale='major', len){
   return out;
 }
 // Chords: a triad on a scale degree, built from the major scale. 'root' (name the root), 'arp' (name the notes one by one), 'block' (name the notes of a chord played together, lowest first)
-function chordQuestion(L, lvl, key){
+function chordQuestion(L, lvl, key, scale='major'){
   const labels = L.roots.map(i => String(i+1));
   const r = L.roots[labels.indexOf(weightedPick(labels, labels.map(d => degWeight(d, lvl))))];
   let notes = [r, r+2, r+4];
@@ -786,11 +814,11 @@ function chordQuestion(L, lvl, key){
     while (Math.max(...notes) > 10) notes = notes.map(x => x - 7); };
   if (L.gen === 'root'){
     if (L.inv) turn();
-    return { pos:[r], alts:[0], sound:[notes.map(x => posMidi(x, key))], soundDur:1.4, len:1 };
+    return { pos:[r], alts:[0], sound:[notes.map(x => posMidi(x, key, scale))], soundDur:1.4, len:1 };
   }
   if (L.gen === 'arp'){ if (Math.random() < 0.3) notes.reverse(); return { pos:notes, alts:[0,0,0], len:3 }; }
   turn();
-  return { pos:notes, alts:[0,0,0], sound:[notes.map(x => posMidi(x, key))], soundDur:1.6, len:3 };
+  return { pos:notes, alts:[0,0,0], sound:[notes.map(x => posMidi(x, key, scale))], soundDur:1.6, len:3 };
 }
 // Rhythm: a pattern of note lengths (in beats). 'tap' repeats the tonic; 'melody' puts a melody on the rhythm.
 function beatName(b){ const w = Math.floor(b + 1e-9), f = Math.round((b - w)*4); return String(w + 1) + ['','e','&','a'][f]; }
@@ -833,7 +861,7 @@ function makeQuestion(){
   const key = T.roundKey, scale = T.roundScale;
   T.key = key;
   const q = { lvl, review, drill:false, key, scale, oct:0, kind:L.kind, rhy:L.rhy, input:inputFor(L) };
-  if (L.kind === 'chord') Object.assign(q, chordQuestion(L, lvl, key));
+  if (L.kind === 'chord') Object.assign(q, chordQuestion(L, lvl, key, scale));
   else if (L.kind === 'rhythm') Object.assign(q, rhythmQuestion(L, lvl, key, scale));
   else if (L.len === 1){
     const prev = T.q && T.q.labels && T.q.labels.length === 1 ? T.q.labels[0] : null;
@@ -841,7 +869,7 @@ function makeQuestion(){
   } else { const ph = pickPhrase(lvl, scale); q.pos = ph.map(x => x[0]); q.alts = ph.map(x => x[1]); }
   // One-octave levels: the octave (below / middle / above) is the round's octave; the cadence moves with it.
   if (L.kind === 'notes' && L.range === R1 && cur.range === R1){ q.oct = T.roundOct; q.pos = q.pos.map(s => s + 7*q.oct); }
-  q.labels = q.labels || q.pos.map((s,i) => q.alts[i] ? CHROMA[mod(SCALES.major.steps[mod(s,7)] + q.alts[i], 12)] : posLabel(s, scale));
+  q.labels = q.labels || q.pos.map((s,i) => q.alts[i] ? CHROMA[mod(SCALES[scale].steps[mod(s,7)] + q.alts[i], 12)] : posLabel(s, scale));
   q.midi = q.midi || q.pos.map((s,i) => noteMidi(s, key, scale, q.alts[i]));
   q.len = q.len || L.len;
   return q;
@@ -1338,7 +1366,7 @@ async function giveUp(){
 function noteForLabel(label, near, scale='major'){
   const labs = SCALES[scale].labels, i = labs.indexOf(label), c = [];
   if (i >= 0){ for (let s = near-7; s <= near+7; s++) if (mod(s,7) === i) c.push([s,0]); }
-  else if (CHROMA_POS[label]){ const [s0,a] = CHROMA_POS[label]; for (let k = -4; k <= 4; k++) c.push([s0 + 7*k, a]); }
+  else { const cp = chromaPos(scale, label); if (cp){ const [s0,a] = cp; for (let k = -4; k <= 4; k++) c.push([s0 + 7*k, a]); } }
   c.sort((x,y) => Math.abs(x[0]-near) - Math.abs(y[0]-near));
   return c[0] || null;
 }
@@ -1405,7 +1433,7 @@ function showLevelUp(lvl){
   const nl = nextLevel(), next = S.mastered[nl] === undefined ? LEVELS[nl] : null;
   $('bLvlOk').style.display = next ? '' : 'none';
   $('lvlOvTitle').textContent = `Level ${levelNo(lvl)} mastered!`;
-  $('lvlOvText').innerHTML = next ? `Up next: <b>${next.title}</b><br>${next.desc}` : 'You have finished every level. Keep the older ones sharp: review questions keep mixing them in.';
+  $('lvlOvText').innerHTML = next ? `Up next: <b>${next.title}</b><br>${descOf(next)}` : 'You have finished every level. Keep the older ones sharp: review questions keep mixing them in.';
   $('lvlOv').classList.remove('hidden'); confetti();
 }
 function confetti(){
@@ -1421,7 +1449,7 @@ function confetti(){
    ===================================================================== */
 const Car = { running:false, token:null, wake:null };
 async function requestWake(){ try { if ('wakeLock' in navigator) Car.wake = await navigator.wakeLock.request('screen'); } catch(e){} }
-function carDegrees(){ return S.settings.car.degrees === 'all' ? ALL7 : LEVELS[Math.min(S.current, 5)].degrees; }
+function carDegrees(){ return S.settings.car.degrees === 'all' ? ALL7 : (LEVELS[Math.min(S.current, 5)].idx || [0,2,4]).map(i => String(i+1)); }
 async function carLoop(token){
   const c = S.settings.car; let key = c.keyMode === 'random' ? randKey(-1) : c.keyMode === 'C' ? 0 : T.key;
   let last = null, first = true;
@@ -1476,9 +1504,23 @@ function nextLevel(){ for (let i=0;i<LEVELS.length;i++) if (!LEVELS[i].hidden &&
 // Answers feed the shared degree bars, trouble spots and drilling only from mastered levels and the next level to master;
 // dabbling on a harder level only counts toward that level's own score.
 const sharedStats = lvl => S.mastered[lvl] !== undefined || lvl === nextLevel();
+// Modes: the whole ladder can be practiced in any of the six scales. The top-level progress fields always hold the active mode;
+// the others wait in S.modeStore. An old file has no mode, so it loads as major with everything it had.
+const MODE_FIELDS = ['current','unlocked','mastered','hist','levelDeg','deg','conf'];
+const modeName = m => m === 'major' ? 'Major' : SCALES[m].name.replace(/^./, c => c.toUpperCase());
+function switchMode(m){
+  if (!SCALES[m] || m === S.mode) return;
+  const keep = {}; MODE_FIELDS.forEach(k => keep[k] = S[k]);
+  S.modeStore[S.mode] = keep;
+  const f = freshState(), next = S.modeStore[m] || f;
+  MODE_FIELDS.forEach(k => { S[k] = next[k] !== undefined ? next[k] : f[k]; });
+  delete S.modeStore[m];
+  S.mode = m; S.current = nextVisible(Math.min(LEVELS.length-1, Math.max(0, S.current | 0)));
+  T.roundKey = null; T.cadKey = null; T.roundScale = m; save();
+}
 function updateHeader(){
   const L = LEVELS[S.current], m = masteryInfo(S.current);
-  $('hLvlNum').textContent = 'L' + levelNo(S.current); $('hLvlTitle').textContent = L.title;
+  $('hLvlNum').textContent = 'L' + levelNo(S.current); $('hLvlTitle').textContent = L.title; $('hBarT').textContent = 'Mastery of this level' + (S.mode !== 'major' ? ' · ' + modeName(S.mode) + ' mode' : '');
   $('hBar').style.width = (m.prog*100).toFixed(0) + '%'; $('hPct').textContent = S.mastered[S.current] !== undefined ? 'Mastered ✓' : (m.prog*100).toFixed(0) + '%';
   const done = S.mastered[S.current] !== undefined;
   $('hBarL').textContent = done ? 'You have mastered this level; extra practice is fine' : m.n < m.W ? `${m.n} of the ${m.W} answers needed so far` : `Accuracy ${(m.acc*100).toFixed(0)}%, need ${(m.target*100)|0}%`;
@@ -1553,6 +1595,9 @@ function renderSettings(){
       ${optSelect('dailyGoal','Daily goal','', s.dailyGoal, [[30,'30 answers'],[60,'60 answers'],[100,'100 answers'],[150,'150 answers']])}
       ${optSelect('breakEvery','Break reminder','Short sessions help you learn more than long ones', s.breakEvery, [[0,'Off'],[5,'After 5 minutes'],[10,'After 10 minutes'],[15,'After 15 minutes'],[20,'After 20 minutes']])}
     </div>
+    <h2>Mode</h2><div class="card">
+      ${optSelect('_mode','Practice in','Every level is heard and named in this mode. Each mode keeps its own progress, so switching never loses anything', S.mode, Object.keys(SCALES).map(k => [k, modeName(k)]))}
+    </div>
     <h2>Keyboard</h2><div class="card">
       ${optSelect('answerWith','Answer with','Works on every level. Also the 123 / Keys button on the training screen. On the keyboard, any octave counts', s.answerWith === 'piano' ? 'piano' : 'level', [['level','Number pad'],['piano','Keyboard']])}
       ${optToggle('labelKeys','Note names on keys','Turn off once you know the keyboard', s.labelKeys)}
@@ -1592,7 +1637,7 @@ function renderProgress(){
     const info = !done ? masteryInfo(i) : null;
     lv += `<div class="lv ${done?'done':''} ${cur?'cur':''} ${locked?'locked':''}">
       <div class="n">${done ? '✓' : levelNo(i)}</div>
-      <div class="t"><b>${L.title}</b><div>${L.desc}${info && info.n ? ` · ${(info.acc*100).toFixed(0)}% of last ${info.n}` : ''}</div></div>
+      <div class="t"><b>${L.title}</b><div>${descOf(L)}${info && info.n ? ` · ${(info.acc*100).toFixed(0)}% of last ${info.n}` : ''}</div></div>
       ${!cur ? `<button class="act" data-lv="${i}">${nxt ? 'Up next · Practice' : 'Practice'}</button>` : cur ? '<span class="act" style="color:var(--dim)">Now</span>' : ''}</div>`;
   });
   COMING.forEach(t => { lv += `<div class="lv locked"><div class="n">·</div><div class="t"><b>${t}</b><div>Coming later</div></div></div>`; });
@@ -1651,6 +1696,10 @@ document.addEventListener('change', e => {
   const sel = e.target.closest('select[data-opt]');
   if (sel){
     const id = sel.dataset.opt, raw = sel.value;
+    if (id === '_mode'){
+      if (T.phase !== 'idle' || Car.running){ toast('Stop the current session first'); sel.value = S.mode; return; }
+      switchMode(raw); resetTrainIdle(); updateHeader(); toast(`Practicing in ${modeName(S.mode)}`); return;
+    }
     const v = isNaN(+raw) ? raw : +raw; setPath(id, v); updateHeader(); if (id === 'answerWith' && !(T.q && T.phase !== 'idle')) renderPad(null); return;
   }
   if (e.target.id === 'fImport'){

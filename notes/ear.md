@@ -20,7 +20,7 @@ to melodic dictation.
 ## Decisions (Steve's)
 
 - Answers as numbers 1–7, never solfège. The number pad shows 1 2 3 4 / 5 6 7 1 (upper 1 counts as 1).
-- Major keys until fully mastered, then minor and modes, chromatic notes, chords, sing-back and rhythm (all built, Nov 22 2026).
+- Major keys through the whole ladder (single notes, phrases, chromatic notes, chords, sing-back, rhythm); other modes are a Settings choice with their own mastery (Steve, Nov 23 2026).
 - Resolution goes to the nearest tonic: 1–4 step down, 5–7 step up.
   The number pad lights up in step with the resolving notes: top row (1 2 3 4) right to left, bottom row (5 6 7 and the upper 1) left to right. On the keyboard the resolving keys light the same way (the keys shown always include 1 and the upper 1 and every note the question and resolution play, so the heard note is always tappable; `pianoWindow()`).
 - The key stays fixed for a round of questions (no "new key every note"). Round length is
@@ -59,20 +59,22 @@ to melodic dictation.
 
 ## Level ladder (LEVELS in index.html)
 
-36 entries, 32 shown. New levels are only ever appended, because saved progress is indexed by position in the list (`S.v` stays 1). Four entries are hidden (`hidden:true`, positions 10–13, the old keyboard-only "Play it" levels): they stay in the list so saved progress keeps its positions, but they are skipped everywhere. `levelNo(i)` gives the number shown to Steve; the numbers below are the shown ones.
+36 entries, 26 shown. New levels are only ever appended, because saved progress is indexed by position in the list (`S.v` stays 1). Ten entries are hidden (`hidden:true`, positions 10–13 and 15–20 counting from 1: the old keyboard-only "Play it" levels and the old fixed minor/modes levels). They stay so saved progress keeps its positions, but are skipped everywhere. `levelNo(i)` gives the number shown to Steve; the numbers below are the shown ones.
 
-Steve's decision (Nov 23 2026): no keyboard-only levels. The 123 / Keys button (setting `answerWith`) works on every level except sing and tap; the default is the number pad.
+Steve's decisions (Nov 23 2026):
+- No keyboard-only levels. The 123 / Keys button (setting `answerWith`) works on every level except sing and tap; the default is the number pad.
+- The whole progression is taught in major first. Modes are a separate setting (Settings → Mode: major, minor, Dorian, Mixolydian, Lydian, Phrygian). The same ladder is then heard and named in that mode, and each mode starts its own mastery from scratch.
 
-1. Home base: 1 3 5 (key of C) · 2. Add 2 and 6 (pentatonic) · 3. Add 4 · 4. Add 7, full major scale
+How modes are stored: `S.mode` is the active mode; the progress fields `current, unlocked, mastered, hist, levelDeg, deg, conf` at the top level always belong to the active mode, and the other modes' copies wait in `S.modeStore`. `switchMode()` swaps them. A file without `mode` (every file before Nov 23 2026) loads as major with all its progress. Level `scales`/`degrees` are computed from the mode (`modeScale()`); levels list scale steps (`idx`) rather than labels. Chromatic levels add "outside notes" for the mode (`outs`, order in `OUT_ORDER`, position from `chromaPos()`): in major that is ♯4 ♭7 then ♭3 ♭6 then ♭2. Chord levels build the chord from the mode's own notes. Car mode stays in major. Not checked by ear: how the cadence sounds in Lydian, Mixolydian and Phrygian (`cadence()`), and that chords in each mode sound right.
+
+1. Home base: 1 3 5 (key of C) · 2. Add 2 and 6 (pentatonic) · 3. Add 4 · 4. Add 7, full scale
    Steve's decision (Nov 22 2026): other keys come in early so the ear never leans on C. Level 1 stays in C; level 2 uses C, G, F; level 3 adds D and B♭ (`KEYS_B`); level 4 adds A and E♭ (`KEYS_C`). The key still changes per round.
 5. New key every round (all 12) · 6. Three octaves, new key every round
 7–9. Two-, three-, four-note phrases · 10. Six-note melodies
-11–16. Minor and modes (`scales`, `idx` = scale positions): minor pentatonic, full minor, minor 3-note phrases, Dorian and Mixolydian, every mode (major, minor, Dorian, Mixolydian, Lydian, Phrygian), modes 3-note phrases. Pad labels follow the scale (♭3, ♭6, ♭7…); voice answers say the position number ("seven" = ♭7).
-17–20. Chromatic (`chroma`): ♯4 and ♭7, add ♭3 and ♭6, all twelve (12-button pad; voice off), 3-note phrases. Wrong chromatic answers still resolve correctly (`resolveNotes`).
-21–25. Chords (`kind:'chord'`): roots I IV V, roots on every degree, inversions, arpeggios (name the three notes), block chords (name the notes lowest first).
-26–28. Sing it back (`kind:'sing'`): pentatonic, all seven, 3-note phrases. Microphone pitch detection (`Sing`, YIN `detectPitch`), any octave counts. Uses the same play-and-record audio mode as voice answers.
-29–32. Rhythm (`kind:'rhythm'`): tap the rhythm (quarters and eighths, then off-beats and dotted), then melody with rhythm (3 and 5 notes; keyboard or pad). Graded on the gaps between taps (tolerance `tol`), not on absolute time.
-
+11–14. Chromatic (`chroma`): first two outside notes, two more, all twelve (12-button pad; voice off), 3-note phrases. Wrong chromatic answers still resolve correctly (`resolveNotes`).
+15–19. Chords (`kind:'chord'`): roots 1 4 5, roots on every degree, inversions, arpeggios (name the three notes), block chords (name the notes lowest first).
+20–22. Sing it back (`kind:'sing'`): pentatonic, all seven, 3-note phrases. Microphone pitch detection (`Sing`, YIN `detectPitch`), any octave counts. Uses the same play-and-record audio mode as voice answers.
+23–26. Rhythm (`kind:'rhythm'`): tap the rhythm (quarters and eighths, then off-beats and dotted), then melody with rhythm (3 and 5 notes; keyboard or pad). Graded on the gaps between taps (tolerance `tol`), not on absolute time.
 
 Tolerances, `limitMult` (speed limit multiplier: 1.25 to 3 on harder levels, 0 = no speed test on rhythm) and the key pools are my choices, not Steve's. Sing and rhythm levels have NOT been tried on his phone yet (microphone permission, audio mode, tap timing); expect tuning.
 
@@ -161,6 +163,6 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
 Steve felt he moved from the phrase levels to melodies, and to the keyboard, too fast.
 
 1. **Stricter mastery, on separate days.** A level counts as mastered only after about 30 answers at the target accuracy, then confirmed again on a different day. Stops one good run from counting.
-2. **Smaller steps before big jumps.** Phrase levels start with two notes from 1, 3 and 5 in one key, then two notes from the full scale, then three, and so on. A stepping stone between the pad and the keyboard (one note played on the keyboard in the key just heard). A new mode starts as one mode in one key, then the mix. New steps must be added without moving saved level positions (hidden entries and `levelNo()` already allow a display order).
+2. **Smaller steps before big jumps.** Phrase levels start with two notes from 1, 3 and 5 in one key, then two notes from the full scale, then three, and so on. A stepping stone between the pad and the keyboard (one note played on the keyboard in the key just heard). New steps must be added without moving saved level positions (hidden entries and `levelNo()` already allow a display order).
 3. **Mix in older material at the start of a new level.** For the first few sessions on a big new skill, about a third of the questions come from the level before it.
 4. **Go easier at first on new skills.** In the first sessions of a new level, replays are free and the tempo is slower; it tightens later.
