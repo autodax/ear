@@ -256,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-23.5';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-23.6';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -367,6 +367,7 @@ const KEYS_A = [0,7,5], KEYS_B = [0,7,5,2,10], KEYS_C = [0,7,5,2,10,9,3];
 const RHY_BASIC = [[1,1,1,1],[1,1,2],[2,1,1],[1,2,1],[1,.5,.5,1,1],[.5,.5,1,1,1],[1,1,.5,.5,1],[.5,.5,.5,.5,1,1],[1,1,1,.5,.5]];
 const RHY_SYNC = [[.5,1,1,1,.5],[1.5,.5,1.5,.5],[.5,1,.5,1,1],[1,.5,1,.5,1],[.5,.5,.5,1.5,1],[1,1.5,.5,1],[.5,1.5,1,1],[1.5,.5,1,1]];
 const RHY_MEL3 = [[1,1,2],[2,1,1],[1,2,1],[1.5,.5,2],[.5,.5,3],[1,1,1]];
+const RHY_MEL2 = [[2,2],[3,1],[1,3],[1,1]];
 const RHY_MEL5 = [[1,.5,.5,1,1],[.5,.5,1,1,1],[1,1,.5,.5,1],[1.5,.5,1,.5,.5],[1,1,1,.5,.5],[.5,1,.5,1,1]];
 const LEVELS = [
   {title:'Home base: 1 3 5',    desc:'Key of C · one octave, which moves every round', idx:[0,2,4], range:R1, keys:[0], len:1, input:'numbers'},
@@ -409,13 +410,28 @@ const LEVELS = [
   {title:'Tap the rhythm',       desc:'Count in, listen, then tap the rhythm back. Quarter and eighth notes', kind:'rhythm', rhy:'tap', patterns:RHY_BASIC, tol:.25, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
   {title:'Tap the rhythm: off-beats', desc:'Syncopation and dotted notes', kind:'rhythm', rhy:'tap', patterns:RHY_SYNC, tol:.22, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
   {title:'Melody with rhythm: 3 notes', desc:'Play the notes on the keyboard with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL3, tol:.28, idx:IDX7, range:RP, len:3, input:'piano', noSpeed:true},
-  {title:'Melody with rhythm: 5 notes', desc:'Longer melodies with mixed note lengths', kind:'rhythm', rhy:'melody', patterns:RHY_MEL5, tol:.28, idx:IDX7, range:RP, len:5, input:'piano', noSpeed:true}
+  {title:'Melody with rhythm: 5 notes', desc:'Longer melodies with mixed note lengths', kind:'rhythm', rhy:'melody', patterns:RHY_MEL5, tol:.28, idx:IDX7, range:RP, len:5, input:'piano', noSpeed:true},
+  // ---- Stepping stones (added Nov 2026, shown between the levels they bridge via `after`; saved progress positions never move)
+  {title:'Two notes: 1 3 5 in C',  desc:'Your first two-note phrases, from the three steadiest notes, in one key', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', after:5},
+  {title:'Two notes: 1 3 5, any key', desc:'The same three notes, now in every key', idx:[0,2,4], range:RP, len:2, input:'numbers', after:5},
+  {title:'Three notes: 1 3 5',     desc:'Three-note phrases from the steadiest notes', idx:[0,2,4], range:RP, len:3, input:'numbers', after:6},
+  {title:'Five-note phrases',      desc:'One step up from four notes', idx:IDX7, range:RP, len:5, input:'numbers', after:8},
+  {title:'Chromatic: one outside note', desc:'The scale plus its single most common outsider', chroma:true, outs:1, range:R1, len:1, input:'numbers', limitMult:1.5, after:13},
+  {title:'Chord roots: 1 and 5',   desc:'Just two chords to tell apart', kind:'chord', gen:'root', roots:[0,4], range:R1, len:1, input:'numbers', limitMult:1.5, after:23},
+  {title:'Block chords on 1, 4, 5', desc:'Name the three notes of a chord played together, from just three chords', kind:'chord', gen:'block', roots:[0,3,4], idx:IDX7, range:RP, len:3, input:'numbers', limitMult:1.25, after:27},
+  {title:'Sing back: 1 3 5',       desc:'Hear a note, then sing it. Only the three steadiest notes. Uses the microphone', kind:'sing', idx:[0,2,4], range:R1, len:1, input:'sing', limitMult:3, after:28},
+  {title:'Melody with rhythm: 2 notes', desc:'Play two notes with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL2, tol:.28, idx:IDX7, range:RP, len:2, input:'piano', noSpeed:true, after:33}
 ];
 // Fill in defaults so every level has the same shape (old levels list their degrees; newer ones their scale steps)
 // Steve (Nov 23 2026): no keyboard-only levels; the 123 / Keys button works on every level. The four old "Play it" levels
 // stay in the list so saved progress keeps its positions, but are hidden and skipped.
 [9, 10, 11, 12, 14, 15, 16, 17, 18, 19].forEach(i => { LEVELS[i].hidden = true; });   // 14-19: the old fixed minor/modes levels, replaced by the Mode setting
-const levelNo = i => { let n = 0; for (let k = 0; k <= i; k++) if (!LEVELS[k].hidden) n++; return n; };   // the number shown to Steve
+// The teaching order of the shown levels (stepping stones slot in after the level named in `after`). Saved progress is by list position, so it never moves.
+const ORDER = (() => { const base = [], ins = {};
+  LEVELS.forEach((L,i) => { if (L.hidden) return; if (L.after !== undefined) (ins[L.after] = ins[L.after] || []).push(i); else base.push(i); });
+  const out = []; base.forEach(i => { out.push(i); (ins[i] || []).forEach(j => out.push(j)); }); return out; })();
+const levelNo = i => ORDER.indexOf(i) + 1;   // the number shown to Steve
+const nextAfter = i => ORDER[Math.min(ORDER.length-1, ORDER.indexOf(i) + 1)];
 const nextVisible = i => { while (i < LEVELS.length-1 && LEVELS[i].hidden) i++; return i; };
 // The mode (scale) chosen in Settings; the whole ladder is heard and named in it. Each mode keeps its own progress.
 const modeScale = () => (typeof S !== 'undefined' && S && SCALES[S.mode] ? S.mode : 'major');
@@ -438,7 +454,7 @@ const descOf = L => typeof L.desc === 'function' ? L.desc() : L.desc;
 LEVELS.forEach(L => {
   L.kind = L.kind || 'notes';
   L.keys = L.keys || ALLKEYS;
-  if (L.kind === 'chord') L.idx = L.roots;
+  if (L.kind === 'chord') L.idx = L.idx || L.roots;
   if (L.hidden){
     L.scales = L.scales || ['major'];
     if (L.idx && !L.degrees) L.degrees = labelUnion(L.scales, L.idx);
@@ -466,7 +482,7 @@ const DEFAULT_SETTINGS = {
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
 function freshState(){
-  return { v:1, mode:'major', modeStore:{}, current:0, unlocked:0, mastered:{}, hist:{}, levelDeg:{}, deg:{}, conf:{},
+  return { v:1, mode:'major', modeStore:{}, current:0, unlocked:0, mastered:{}, pending:{}, lvDays:{}, hist:{}, levelDeg:{}, deg:{}, conf:{},
            xp:0, total:0, bestStreak:0, days:{}, settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) };
 }
 let S = load();
@@ -483,9 +499,18 @@ function normalize(s){
   const r = Object.assign(f, s);
   if (!SCALES[r.mode]) r.mode = 'major';
   if (!r.modeStore || typeof r.modeStore !== 'object') r.modeStore = {};
+  fixProgress(r); Object.values(r.modeStore).forEach(fixProgress);
   const last = LEVELS.length - 1;
   r.current = nextVisible(Math.min(last, Math.max(0, r.current | 0))); r.unlocked = Math.min(last, Math.max(0, r.unlocked | 0));
   return r;
+}
+// Bring any progress (old or new) up to date: fields added later, stepping stones already outgrown, levels that were well under way before day-tracking began.
+function fixProgress(o){
+  if (!o.mastered) o.mastered = {}; if (!o.pending) o.pending = {}; if (!o.lvDays) o.lvDays = {}; if (!o.hist) o.hist = {};
+  ORDER.forEach((i, pos) => { const L = LEVELS[i];
+    if (L.after !== undefined && o.mastered[i] === undefined && ORDER.slice(pos+1).some(j => o.mastered[j] !== undefined)) o.mastered[i] = 'skipped';
+    const n = (o.hist[i] || []).filter(x => !x.r).length;
+    if (!o.lvDays[i] && n >= 20) o.lvDays[i] = ['-','-','-']; });
 }
 function load(){
   try { const raw = localStorage.getItem(STORE); if (raw) return normalize(JSON.parse(raw)); } catch(e){}
@@ -854,8 +879,13 @@ function makeQuestion(){
   let lvl = S.current, review = false;
   const cur = LEVELS[S.current];
   // Review questions come from earlier levels of the same kind, played in the round's key, scale and octave.
-  const pool = []; for (let i=0;i<S.current;i++) if (!LEVELS[i].hidden && S.mastered[i] !== undefined && LEVELS[i].kind === cur.kind && LEVELS[i].rhy === cur.rhy) pool.push(i);
-  if (pool.length && Math.random()*100 < S.settings.reviewPct){ lvl = pool[Math.floor(Math.random()*pool.length)]; review = true; }
+  const pos = ORDER.indexOf(S.current), kindOk = i => LEVELS[i].kind === cur.kind && LEVELS[i].rhy === cur.rhy || (['notes','chord'].includes(LEVELS[i].kind) && ['notes','chord'].includes(cur.kind));
+  const pool = ORDER.slice(0, Math.max(0, pos)).filter(i => S.mastered[i] !== undefined && LEVELS[i].kind === cur.kind && LEVELS[i].rhy === cur.rhy);
+  const prev = pos > 0 ? ORDER[pos-1] : null;
+  // A level in its first days mixes in about a third of the level just before it (if the review setting is on)
+  const young = S.settings.reviewPct > 0 && prev !== null && isYoung(S.current) && kindOk(prev);
+  if (young){ if (Math.random()*100 < 33){ review = true; lvl = pool.length && Math.random() < 0.2 ? pool[Math.floor(Math.random()*pool.length)] : prev; } }
+  else if (pool.length && Math.random()*100 < S.settings.reviewPct){ lvl = pool[Math.floor(Math.random()*pool.length)]; review = true; }
   const L = LEVELS[lvl];
   startRoundIfNeeded();
   const key = T.roundKey, scale = T.roundScale;
@@ -876,7 +906,7 @@ function makeQuestion(){
 }
 
 function masteryInfo(lvl){
-  const L = LEVELS[lvl]; const W = L.len === 1 ? 20 : 15;
+  const L = LEVELS[lvl]; const W = L.len === 1 ? 30 : 20;   // answers that count (the latest ones)
   const h = (S.hist[lvl] || []).filter(x => !x.r).slice(-W);
   const n = h.length, ok = h.filter(x => x.ok);
   const acc = n ? ok.length/n : 0;
@@ -887,10 +917,15 @@ function masteryInfo(lvl){
   const speedOk = !limit || med <= limit*1000;
   const degs = L.degrees.map(d => { const r = ((S.levelDeg[lvl]||{})[d]) || []; const a = accOf(r.slice(-6)); return {d, ok: r.length >= 4 && a >= 0.75}; });
   const degOk = degs.every(x => x.ok);
-  const mastered = n >= W && acc >= target && speedOk && degOk;
+  // Hitting the target once makes the level "ready"; it counts as mastered only when it is hit again on a later day
+  const ready = n >= W && acc >= target && speedOk && degOk;
+  const pend = S.pending[lvl] || null, needToday = Math.ceil(W/3), todayN = h.filter(x => x.d === today()).length;
+  const mastered = !!(ready && pend && pend !== today() && todayN >= needToday);
   const prog = Math.min(1, n/W)*0.35 + Math.min(1, acc/target)*Math.min(1,n/W)*0.4 + (degs.length ? degs.filter(x=>x.ok).length/degs.length : 1)*0.15 + (speedOk && n ? 0.1 : 0);
-  return { n, W, acc, target, med, limit, speedOk, degOk, degs, mastered, prog: mastered ? 1 : Math.min(prog, 0.97) };
+  return { n, W, acc, target, med, limit, speedOk, degOk, degs, ready, pend, needToday, todayN, mastered, prog: mastered ? 1 : ready ? 0.95 : Math.min(prog, 0.9) };
 }
+// A level just started gets a gentle first few days: slower notes and extra review of the level before it.
+function isYoung(lvl){ return S.mastered[lvl] === undefined && !S.pending[lvl] && (S.lvDays[lvl] || []).length < 3; }
 
 /* =====================================================================
    SINGING: the microphone listens for steady sung notes (YIN pitch tracking).
@@ -966,8 +1001,9 @@ const Sing = {
    ===================================================================== */
 const $ = id => document.getElementById(id);
 const cadenceTempo = () => S.settings.cadenceTempo || 1;
-const noteTempo = () => S.settings.noteTempo || 1;
-const resTempo = () => S.settings.resTempo || 1;
+const gentle = () => isYoung(S.current) ? 0.8 : 1;   // new levels start a little slower
+const noteTempo = () => (S.settings.noteTempo || 1) * gentle();
+const resTempo = () => (S.settings.resTempo || 1) * gentle();
 const ev = (notes, dur, vel, spd) => ({ notes: Array.isArray(notes) ? notes : [notes], dur: dur / (spd || noteTempo()), vel });
 const cadenceEvents = (k, oct=0, scale='major') => { const cs = cadence(k, oct, S.settings.cadenceType || 'I-IV-V-I', scale); return cs.map((c,i) => ev(c, i === cs.length - 1 ? 1.25 : 0.72, c.length === 1 ? 0.78 : 0.62, cadenceTempo())); };
 
@@ -1216,7 +1252,8 @@ async function grade(){
   T.results = res;
   // stats
   const lvl = q.lvl;
-  pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok, t: Math.round(t), r: q.review ? 1 : 0 }, 40);
+  pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok, t: Math.round(t), r: q.review ? 1 : 0, d: today() }, 60);
+  if (!q.review){ const ld = S.lvDays[lvl] = S.lvDays[lvl] || []; if (!ld.includes(today())) ld.push(today()); }
   if (statsOn){
     S.levelDeg[lvl] = S.levelDeg[lvl] || {};
     const shared = sharedStats(lvl);
@@ -1281,6 +1318,14 @@ async function grade(){
       S.mastered[lvl] = today();
       S.unlocked = Math.max(S.unlocked, Math.min(LEVELS.length-1, lvl+1));   // kept only so the saved file keeps its old shape
       save(); updateHeader(); showLevelUp(lvl); return;
+    }
+    if (m.ready && S.mastered[lvl] === undefined && !S.pending[lvl]){
+      S.pending[lvl] = today(); save(); updateHeader();
+      const resume = () => { T.cadKey = null; T.roundKey = null; renderPad(null); nextQuestion(); };
+      modal({ icon:'🌱', title:'Strong session!', text:'You are hitting the target on this level. It counts as mastered once you do it again on another day: that is what makes it stick.',
+        buttons:[{label:'Keep practicing', fn: () => nextQuestion()},
+                 {label:'Try the next level', ghost:true, fn: () => { S.current = nextAfter(lvl); save(); updateHeader(); resume(); }}] });
+      return;
     }
   }
   if (S.days[today()] === S.settings.dailyGoal){ showGoalReached(); return; }
@@ -1500,13 +1545,17 @@ function stopCar(){
    ===================================================================== */
 let activeView = 'train';
 // The level to work on next: the first one not yet mastered (the last level if all are)
-function nextLevel(){ for (let i=0;i<LEVELS.length;i++) if (!LEVELS[i].hidden && S.mastered[i] === undefined) return i; return LEVELS.length-1; }
+function nextLevel(){
+  for (const i of ORDER) if (S.mastered[i] === undefined && !S.pending[i]) return i;
+  for (const i of ORDER) if (S.mastered[i] === undefined) return i;
+  return ORDER[ORDER.length-1];
+}
 // Answers feed the shared degree bars, trouble spots and drilling only from mastered levels and the next level to master;
 // dabbling on a harder level only counts toward that level's own score.
-const sharedStats = lvl => S.mastered[lvl] !== undefined || lvl === nextLevel();
+const sharedStats = lvl => S.mastered[lvl] !== undefined || !!S.pending[lvl] || lvl === nextLevel();
 // Modes: the whole ladder can be practiced in any of the six scales. The top-level progress fields always hold the active mode;
 // the others wait in S.modeStore. An old file has no mode, so it loads as major with everything it had.
-const MODE_FIELDS = ['current','unlocked','mastered','hist','levelDeg','deg','conf'];
+const MODE_FIELDS = ['current','unlocked','mastered','pending','lvDays','hist','levelDeg','deg','conf'];
 const modeName = m => m === 'major' ? 'Major' : SCALES[m].name.replace(/^./, c => c.toUpperCase());
 function switchMode(m){
   if (!SCALES[m] || m === S.mode) return;
@@ -1523,8 +1572,10 @@ function updateHeader(){
   $('hLvlNum').textContent = 'L' + levelNo(S.current); $('hLvlTitle').textContent = L.title; $('hBarT').textContent = 'Mastery of this level' + (S.mode !== 'major' ? ' · ' + modeName(S.mode) + ' mode' : '');
   $('hBar').style.width = (m.prog*100).toFixed(0) + '%'; $('hPct').textContent = S.mastered[S.current] !== undefined ? 'Mastered ✓' : (m.prog*100).toFixed(0) + '%';
   const done = S.mastered[S.current] !== undefined;
-  $('hBarL').textContent = done ? 'You have mastered this level; extra practice is fine' : m.n < m.W ? `${m.n} of the ${m.W} answers needed so far` : `Accuracy ${(m.acc*100).toFixed(0)}%, need ${(m.target*100)|0}%`;
-  $('hBarR').textContent = done || m.n < m.W/2 ? '' : (!m.degOk ? 'needs work: ' + m.degs.filter(x=>!x.ok).map(x=>x.d).join(' ')
+  $('hBarL').textContent = done ? 'You have mastered this level; extra practice is fine'
+    : m.pend && m.ready ? (m.pend === today() ? 'Strong work. Do it again on another day to lock it in' : `Confirming: ${Math.min(m.todayN, m.needToday)} of ${m.needToday} answers today`)
+    : m.n < m.W ? `${m.n} of the ${m.W} answers needed so far` : `Accuracy ${(m.acc*100).toFixed(0)}%, need ${(m.target*100)|0}%`;
+  $('hBarR').textContent = done ? '' : m.n < m.W/2 ? (isYoung(S.current) ? 'Gentle start: slower, with extra review' : '') : (!m.degOk ? 'needs work: ' + m.degs.filter(x=>!x.ok).map(x=>x.d).join(' ')
     : (S.settings.showFeedback !== false && !m.speedOk && isFinite(m.med)) ? `speed ${(m.med/1000).toFixed(1)}s, goal ${m.limit.toFixed(1)}s` : '');
   const td = S.days[today()] || 0;
   $('hToday').textContent = td >= S.settings.dailyGoal ? `Answered today: ${td} · goal ✓` : `Answered today: ${td}/${S.settings.dailyGoal}`;
@@ -1631,13 +1682,12 @@ function renderSettings(){
 function renderProgress(){
   const m = masteryInfo(S.current);
   let lv = '';
-  LEVELS.forEach((L,i) => {
-    if (L.hidden) return;
+  ORDER.forEach(i => { const L = LEVELS[i];
     const done = S.mastered[i] !== undefined, cur = i === S.current, locked = false, nxt = i === nextLevel() && !done;
     const info = !done ? masteryInfo(i) : null;
     lv += `<div class="lv ${done?'done':''} ${cur?'cur':''} ${locked?'locked':''}">
       <div class="n">${done ? '✓' : levelNo(i)}</div>
-      <div class="t"><b>${L.title}</b><div>${descOf(L)}${info && info.n ? ` · ${(info.acc*100).toFixed(0)}% of last ${info.n}` : ''}</div></div>
+      <div class="t"><b>${L.title}</b><div>${descOf(L)}${info && info.n ? ` · ${(info.acc*100).toFixed(0)}% of last ${info.n}` : ''}${info && info.pend ? ' · confirm on another day' : ''}</div></div>
       ${!cur ? `<button class="act" data-lv="${i}">${nxt ? 'Up next · Practice' : 'Practice'}</button>` : cur ? '<span class="act" style="color:var(--dim)">Now</span>' : ''}</div>`;
   });
   COMING.forEach(t => { lv += `<div class="lv locked"><div class="n">·</div><div class="t"><b>${t}</b><div>Coming later</div></div></div>`; });

@@ -59,7 +59,7 @@ to melodic dictation.
 
 ## Level ladder (LEVELS in index.html)
 
-36 entries, 26 shown. New levels are only ever appended, because saved progress is indexed by position in the list (`S.v` stays 1). Ten entries are hidden (`hidden:true`, positions 10–13 and 15–20 counting from 1: the old keyboard-only "Play it" levels and the old fixed minor/modes levels). They stay so saved progress keeps its positions, but are skipped everywhere. `levelNo(i)` gives the number shown to Steve; the numbers below are the shown ones.
+45 entries, 35 shown. New levels are only ever appended, because saved progress is indexed by position in the list (`S.v` stays 1). Ten entries are hidden (`hidden:true`, positions 10–13 and 15–20 counting from 1: the old keyboard-only "Play it" levels and the old fixed minor/modes levels). They stay so saved progress keeps its positions, but are skipped everywhere. `levelNo(i)` gives the number shown to Steve; the numbers below are the shown ones.
 
 Steve's decisions (Nov 23 2026):
 - No keyboard-only levels. The 123 / Keys button (setting `answerWith`) works on every level except sing and tap; the default is the number pad.
@@ -67,18 +67,17 @@ Steve's decisions (Nov 23 2026):
 
 How modes are stored: `S.mode` is the active mode; the progress fields `current, unlocked, mastered, hist, levelDeg, deg, conf` at the top level always belong to the active mode, and the other modes' copies wait in `S.modeStore`. `switchMode()` swaps them. A file without `mode` (every file before Nov 23 2026) loads as major with all its progress. Level `scales`/`degrees` are computed from the mode (`modeScale()`); levels list scale steps (`idx`) rather than labels. Chromatic levels add "outside notes" for the mode (`outs`, order in `OUT_ORDER`, position from `chromaPos()`): in major that is ♯4 ♭7 then ♭3 ♭6 then ♭2. Chord levels build the chord from the mode's own notes. Car mode stays in major. Not checked by ear: how the cadence sounds in Lydian, Mixolydian and Phrygian (`cadence()`), and that chords in each mode sound right.
 
+Numbers below are the numbers shown in the app in teaching order (`ORDER`); stepping stones are appended entries with `after:` naming the entry they follow, so saved positions never move. Stepping stones (added Nov 23 2026): two notes from 1 3 5 in C, two notes from 1 3 5 in any key (before the two-note level); three notes from 1 3 5; five-note phrases; chromatic with one outside note; chord roots 1 and 5; block chords on 1 4 5; sing back 1 3 5; melody with rhythm in 2 notes. On load, a stepping stone is marked skipped if a later level is already mastered (`fixProgress`).
+
 1. Home base: 1 3 5 (key of C) · 2. Add 2 and 6 (pentatonic) · 3. Add 4 · 4. Add 7, full scale
    Steve's decision (Nov 22 2026): other keys come in early so the ear never leans on C. Level 1 stays in C; level 2 uses C, G, F; level 3 adds D and B♭ (`KEYS_B`); level 4 adds A and E♭ (`KEYS_C`). The key still changes per round.
 5. New key every round (all 12) · 6. Three octaves, new key every round
 7–9. Two-, three-, four-note phrases · 10. Six-note melodies
-11–14. Chromatic (`chroma`): first two outside notes, two more, all twelve (12-button pad; voice off), 3-note phrases. Wrong chromatic answers still resolve correctly (`resolveNotes`).
-15–19. Chords (`kind:'chord'`): roots 1 4 5, roots on every degree, inversions, arpeggios (name the three notes), block chords (name the notes lowest first).
-20–22. Sing it back (`kind:'sing'`): pentatonic, all seven, 3-note phrases. Microphone pitch detection (`Sing`, YIN `detectPitch`), any octave counts. Uses the same play-and-record audio mode as voice answers.
-23–26. Rhythm (`kind:'rhythm'`): tap the rhythm (quarters and eighths, then off-beats and dotted), then melody with rhythm (3 and 5 notes; keyboard or pad). Graded on the gaps between taps (tolerance `tol`), not on absolute time.
+Later in the order: chromatic (one outside note, then first two, two more, all twelve, 3-note phrases; 12-button pad, voice off), chords (roots 1 and 5, roots 1 4 5, every chord, inversions, arpeggios, block chords on 1 4 5, block chords), sing back (1 3 5, pentatonic, all seven, 3-note phrases; microphone, YIN `detectPitch`, any octave), rhythm (tap, off-beats, melody with rhythm in 2, 3, 5 notes; graded on the gaps between taps, tolerance `tol`).
 
 Tolerances, `limitMult` (speed limit multiplier: 1.25 to 3 on harder levels, 0 = no speed test on rhythm) and the key pools are my choices, not Steve's. Sing and rhythm levels have NOT been tried on his phone yet (microphone permission, audio mode, tap timing); expect tuning.
 
-Mastery: last 20 answers (15 for phrases) at ≥90% (80% for phrases), every degree ≥75% recently,
+Mastery (rule in "Making learning stick" below): enough recent answers at the target accuracy, two days, plus every degree ≥75% recently,
 typical correct answer under the speed limit (2 s from the start of the tone by default, adjustable). About 30% of questions
 drill the most-confused pair (5→6 and 6→5 are pooled into one 5–6 pair, both for drilling in Train and Car modes and in the Progress → Trouble spots list; `topConfusionPairs()`); about 20% are review from mastered levels.
 
@@ -158,11 +157,11 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
   three octaves. Steve will decide when he reaches the keyboard levels.
 - Tune sing-back and rhythm after Steve tries them on the phone. Possible later: other chord qualities, 7th chords, rhythm in dictation with sung answers.
 
-## To do: make learning stick before big jumps (Steve said yes, Nov 23 2026; none built yet)
+## Making learning stick (built Nov 23 2026; Steve asked for all four)
 
-Steve felt he moved from the phrase levels to melodies, and to the keyboard, too fast.
+Steve felt he moved from phrase levels to melodies, and to the keyboard, too fast. The numbers and rules here are my choices.
+1. **Mastery needs more, on two days.** The last 30 answers (20 for multi-note levels) must hit the target accuracy (90%, or 80% for multi-note) with the speed and per-note checks. That makes the level "ready" (`S.pending[lvl]` = the date, "Strong session!" popup). It counts as mastered only when the target is met again on a later day, with at least a third of the window answered that day. Levels already mastered before this change stay mastered. Pending levels still feed the shared stats and are skipped when picking "Up next".
+2. **Stepping stones** between the big jumps (see the ladder). The keyboard needs no stone any more, since it is an option on every level. A new mode is its own Mode setting.
+3. **Review of the level before.** A level in its first three practice days (`isYoung`, from `S.lvDays`) mixes in about a third review, mostly from the level just before it (notes and chords may mix; sing and rhythm only mix with their own kind). Only when the review setting is above 0.
+4. **Gentle start.** In those first three days notes and resolutions play 20% slower (`gentle()`) and the header says so. Replays were already free. Levels already well under way (20+ answers) before this change are not treated as new.
 
-1. **Stricter mastery, on separate days.** A level counts as mastered only after about 30 answers at the target accuracy, then confirmed again on a different day. Stops one good run from counting.
-2. **Smaller steps before big jumps.** Phrase levels start with two notes from 1, 3 and 5 in one key, then two notes from the full scale, then three, and so on. A stepping stone between the pad and the keyboard (one note played on the keyboard in the key just heard). New steps must be added without moving saved level positions (hidden entries and `levelNo()` already allow a display order).
-3. **Mix in older material at the start of a new level.** For the first few sessions on a big new skill, about a third of the questions come from the level before it.
-4. **Go easier at first on new skills.** In the first sessions of a new level, replays are free and the tempo is slower; it tightens later.
