@@ -1,0 +1,15 @@
+{
+  "name": "Ear Trainer",
+  "short_name": "Ear Trainer",
+  "id": "/ear/",
+  "start_url": "/ear/",
+  "scope": "/ear/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#101321",
+  "icons": [
+    { "src": "icon-180.png?v=5", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png?v=5", "sizes": "512x512", "type": "image/png" }
+  ]
+}

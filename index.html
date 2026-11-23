@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" id="vp" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ear Trainer">
+<link rel="apple-touch-icon" href="icon-180.png?v=5">
+<link rel="icon" href="icon-180.png?v=5">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#101321">
+<title>Ear Trainer</title>
+<style>
+:root{
+  --bg:#101321; --panel:#191f33; --panel2:#232a42; --line:#2e3652;
+  --text:#eef0f5; --dim:#9aa1b2; --faint:#646b7d;
+  --accent:#7eabff; --accent2:#5a86ee; --good:#bfe3ff; --bad:#d9895a; --violet:#b69cff; --on-accent:#09101f;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--panel);color:var(--text);
+  font:16px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-user-select:none;user-select:none;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+#app{display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;right:0;max-width:560px;margin:0 auto;background:var(--bg);
+  padding-top:env(safe-area-inset-top)}
+header{padding:10px 16px 8px}
+#app.standalone header{padding-top:40px}
+#app.ios-short nav{padding-bottom:var(--deadzone,0px)}
+#app.ios-short nav button{padding:7px 0 6px;gap:2px;font-size:11px}
+#app.ios-short nav button svg{width:21px;height:21px}
+.lvl-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.lvl-name{font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lvl-num{color:var(--accent);font-weight:700;margin-right:6px}
+.today{color:var(--dim);font-size:13px;white-space:nowrap}
+.bar{height:6px;background:var(--panel2);border-radius:3px;margin-top:8px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .4s}
+.bar-label{display:flex;justify-content:space-between;color:var(--faint);font-size:12px;margin-top:4px}
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px 16px}
+.view{display:none}.view.on{display:block}
+/* Train screen: center the controls vertically in the space between header and tab bar */
+#v-train.on{display:flex;flex-direction:column;justify-content:center;min-height:100%;padding-bottom:12px}
+nav{display:flex;border-top:1px solid var(--line);background:var(--panel);
+  padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:10px 0 9px;color:var(--faint);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--accent)}
+
+/* Train */
+.stage{background:var(--panel);border-radius:var(--r);padding:14px;margin-top:6px;position:relative}
+.stage-top{display:flex;justify-content:space-between;align-items:center;min-height:28px}
+.keyname{font-size:15px;color:var(--dim)}.keyname b{color:var(--text);font-size:19px}
+.chip{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:20px;background:var(--panel2);color:var(--dim)}
+.chip.review{background:#2e2850;color:var(--violet)}
+.chip.drill{background:#243253;color:var(--accent)}
+.streak{font-weight:700;color:var(--accent);font-size:15px}
+.msg{text-align:center;min-height:52px;display:flex;flex-direction:column;justify-content:center;margin:10px 0 4px}
+.msg .big{font-size:22px;font-weight:700}
+.msg .small{font-size:13px;color:var(--dim);margin-top:2px}
+.good{color:var(--good)}.bad{color:var(--bad)}
+.slots{display:flex;justify-content:center;gap:8px;margin:6px 0 10px;min-height:46px}
+.slot{width:44px;height:46px;border-radius:10px;background:var(--panel2);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:20px;border:2px solid transparent}
+.slot.cur{border-color:var(--line)}
+.slot.ok{background:rgba(191,227,255,.16);color:var(--good)}
+.slot.no{background:rgba(217,137,90,.18);color:var(--bad)}
+.slot.hl{border-color:var(--accent)}
+.slot small{font-size:11px;font-weight:600;color:var(--text);opacity:.85}
+.tools{display:flex;gap:6px;margin-top:12px}
+.tool{flex:1;background:var(--panel2);border-radius:10px;padding:10px 2px;font-size:13px;color:var(--dim);white-space:nowrap}
+.tool:active{background:var(--line)}
+.tool[disabled]{opacity:.35}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 10px;margin-top:14px}
+.deg{height:68px;border-radius:14px;background:var(--panel2);font-size:28px;font-weight:700;transition:transform .06s,background .15s}
+.deg:active{transform:scale(.96)}
+.deg.tonic{background:#212b4b;color:var(--accent)}
+.deg.off{opacity:.18;pointer-events:none}
+.deg.res-lit{background:var(--accent);color:var(--on-accent)}
+.deg.off.res-lit{opacity:.8}
+.deg.flash-tap{background:var(--line)}
+.deg.flash-ok{background:var(--good);color:var(--on-accent)}
+.deg.flash-no{background:var(--bad);color:#2a1508}
+.deg.reveal{box-shadow:inset 0 0 0 3px var(--good)}
+.pad.locked .deg{pointer-events:none}
+.go{display:block;width:100%;margin-top:14px;padding:16px;border-radius:14px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--on-accent);font-weight:800;font-size:18px}
+.go.ghost{background:var(--panel2);color:var(--text);font-weight:700}
+.hidden{display:none!important}
+
+/* Piano */
+.piano{position:relative;height:170px;margin-top:14px;display:flex;border-radius:0 0 10px 10px;overflow:hidden;touch-action:none}
+.wk{flex:1;background:linear-gradient(180deg,#f4f1ea,#e4e0d6);border-right:1px solid #b9b4a8;position:relative;border-radius:0 0 7px 7px}
+.wk:last-child{border-right:0}
+.bk{position:absolute;top:0;height:60%;background:linear-gradient(180deg,#2a2c33,#0d0e11);border-radius:0 0 5px 5px;z-index:2;box-shadow:0 2px 3px rgba(0,0,0,.5)}
+.key-lab{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:12px;font-weight:700;color:#6c675c;pointer-events:none}
+.bk .key-lab{color:#b8bcc8;bottom:6px;font-size:10px}
+.key-dot{position:absolute;left:50%;transform:translateX(-50%);bottom:28px;width:8px;height:8px;border-radius:50%;background:var(--accent2);pointer-events:none}
+.bk .key-dot{bottom:22px}
+.wk.down{background:#d8d2c2}.bk.down{background:#444851}
+.wk.res-lit{background:#9dc2ff}.bk.res-lit{background:#5a86ee}
+.wk.k-ok{background:#bfe3ff}.bk.k-ok{background:#3f7fc4}
+.wk.k-no{background:#f0c9ae}.bk.k-no{background:#a8602f}
+
+/* Cards / lists */
+h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:20px 2px 8px;font-weight:700}
+.card{background:var(--panel);border-radius:var(--r);padding:4px 14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .lab{font-size:15px}.row .sub{font-size:12px;color:var(--dim);margin-top:2px}
+.tok{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;-webkit-user-select:text;user-select:text}
+a.lnk{color:var(--accent)}
+select,input[type=range]{font:inherit;font-size:16px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:52%}
+input[type=range]{padding:0;accent-color:var(--accent);width:46%}
+.toggle{width:50px;height:30px;border-radius:15px;background:var(--panel2);position:relative;flex:none;border:1px solid var(--line)}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--faint);transition:.2s}
+.toggle.on{background:var(--accent2);border-color:var(--accent2)}.toggle.on::after{left:23px;background:#fff}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:34px;height:34px;border-radius:9px;background:var(--panel2);font-size:20px;font-weight:700}
+.stepper span{min-width:42px;text-align:center;font-weight:700}
+.lv{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.lv:last-child{border-bottom:0}
+.lv .n{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:var(--panel2);color:var(--faint)}
+.lv.done .n{background:rgba(191,227,255,.16);color:var(--good)}
+.lv.cur .n{background:var(--accent);color:var(--on-accent)}
+.lv .t{flex:1;min-width:0}.lv .t b{font-weight:600;font-size:15px}.lv .t div{font-size:12px;color:var(--dim)}
+.lv.locked{opacity:.45}
+.lv .act{font-size:13px;color:var(--accent);font-weight:600;padding:6px 4px}
+.degbars{display:grid;grid-template-columns:24px 1fr 46px 48px;gap:8px 10px;align-items:center;padding:12px 0}
+.degbars .d{font-weight:800;text-align:center}
+.degbars .b{height:10px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.degbars .b i{display:block;height:100%;background:var(--good)}
+.degbars .p,.degbars .tm{font-size:12px;color:var(--dim);text-align:right}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--panel);border-radius:12px;padding:12px 8px;text-align:center}
+.stat b{display:block;font-size:22px}.stat span{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+.note{font-size:13px;color:var(--dim);padding:8px 2px;line-height:1.45}
+
+/* Car */
+.car-display{background:var(--panel);border-radius:var(--r);padding:20px 14px;text-align:center;margin-top:6px}
+.car-key{color:var(--dim);font-size:15px}.car-key b{color:var(--text);font-size:20px}
+.car-big{font-size:96px;font-weight:800;line-height:1.1;min-height:106px;color:var(--accent)}
+.car-status{color:var(--dim);font-size:14px;min-height:20px}
+.carbtn{display:block;width:100%;margin-top:14px;padding:22px;border-radius:18px;font-weight:800;font-size:22px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--on-accent)}
+.carbtn.stop{background:var(--bad);color:#2a1508}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;background:rgba(10,11,14,.88);display:flex;align-items:center;justify-content:center;z-index:50;padding:24px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.sheet{background:var(--panel);border-radius:20px;padding:26px 22px;max-width:380px;width:100%;text-align:center}
+.sheet h1{margin:0 0 6px;font-size:26px}
+.sheet p{color:var(--dim);margin:8px 0 0;font-size:15px}
+#mBtns .go{margin-top:10px}
+.loadbar{height:4px;background:var(--panel2);border-radius:2px;margin:18px 0 4px;overflow:hidden}
+.loadbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.trophy{font-size:54px;line-height:1}
+.confetti{position:fixed;top:-12px;width:8px;height:14px;z-index:60;pointer-events:none;animation:fall 1.6s ease-in forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.7}}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;z-index:40;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="lvl-row">
+      <div class="lvl-name"><span class="lvl-num" id="hLvlNum">L1</span><span id="hLvlTitle">—</span></div>
+      <div class="today" id="hToday"></div>
+    </div>
+    <div class="bar"><i id="hBar"></i></div>
+    <div class="bar-label"><span id="hBarL"></span><span id="hBarR"></span></div>
+  </header>
+
+  <main>
+    <!-- TRAIN -->
+    <section class="view on" id="v-train">
+      <div class="stage">
+        <div class="stage-top">
+          <div class="keyname" id="tKey"><b>C</b></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="chip hidden" id="tChip"></span>
+            <button class="chip" id="bInput" style="border:0;cursor:pointer" aria-label="Switch between number pad and keyboard"></button>
+            <span class="streak" id="tStreak"></span>
+          </div>
+        </div>
+        <div class="msg" id="tMsg"><div class="big">Ready</div><div class="small">Tap Start to begin</div></div>
+        <div class="slots" id="tSlots"></div>
+        <div class="tools">
+          <button class="tool" id="bCadence">Cadence</button>
+          <button class="tool" id="bReplay">Replay</button>
+          <button class="tool" id="bGiveUp" disabled>Give up</button>
+          <button class="tool" id="bCompare" disabled>Compare</button>
+          <button class="tool" id="bStop">Stop</button>
+        </div>
+      </div>
+      <div class="pad" id="tPad"></div>
+      <div class="piano hidden" id="tPiano"></div>
+      <button class="go" id="bGo">Start</button>
+    </section>
+
+    <!-- CAR -->
+    <section class="view" id="v-car">
+      <div class="car-display">
+        <div class="car-key" id="cKey"><b>C</b></div>
+        <div class="car-big" id="cBig">·</div>
+        <div class="car-status" id="cStatus">Hands-free listening. Set your options, then Start.</div>
+      </div>
+      <button class="carbtn" id="cGo">Start</button>
+      <h2>Car mode options</h2>
+      <div class="card" id="cOpts"></div>
+      <p class="note">Car mode keeps the screen on while it plays. If the phone locks, iOS may pause the audio, so leave it on a mount. It plays even with the ringer switch on silent.</p>
+    </section>
+
+    <!-- PROGRESS -->
+    <section class="view" id="v-prog"></section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="v-set"></section>
+  </main>
+
+  <nav id="nav">
+    <button data-v="train" class="on"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Train</button>
+    <button data-v="car"><svg viewBox="0 0 24 24"><path d="M5 16l1.5-5.5A2 2 0 0 1 8.4 9h7.2a2 2 0 0 1 1.9 1.5L19 16"/><rect x="3" y="15" width="18" height="4" rx="1.5"/><circle cx="7" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/></svg>Car</button>
+    <button data-v="prog"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Progress</button>
+    <button data-v="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>Settings</button>
+  </nav>
+</div>
+
+<div class="overlay" id="startOv">
+  <div class="sheet">
+    <h1>Ear Trainer</h1>
+    <p>Hear scale degrees in context, from single notes to whole melodies on the keyboard.</p>
+    <div class="loadbar"><i id="loadBar"></i></div>
+    <p id="loadTxt" style="font-size:13px">Loading piano… (you can start now)</p>
+    <button class="go" id="bBegin">Tap to begin</button>
+  </div>
+</div>
+<div class="overlay hidden" id="lvlOv">
+  <div class="sheet">
+    <div class="trophy">🏆</div>
+    <h1 id="lvlOvTitle">Level up!</h1>
+    <p id="lvlOvText"></p>
+    <button class="go" id="bLvlOk">Keep going</button>
+  </div>
+</div>
+<div class="overlay hidden" id="modal">
+  <div class="sheet">
+    <div class="trophy" id="mIcon"></div>
+    <h1 id="mTitle"></h1>
+    <p id="mText"></p>
+    <div id="mBtns"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const APP_VERSION = '2026-11-22.1';   // bump on every release so installed copies update themselves
+/* =====================================================================
+   MUSIC THEORY DATA
+   Built from data so minor keys, modes, chromatic notes and chords can be
+   added later as new scales, new labels and new question "types".
+   ===================================================================== */
+const SCALES = {
+  major: { name: 'major', steps: [0,2,4,5,7,9,11], labels: ['1','2','3','4','5','6','7'] }
+  // later: minor: {steps:[0,2,3,5,7,8,10]}, dorian, mixolydian, ...
+};
+const KEYS = [
+  {pc:0,name:'C',flat:false},{pc:1,name:'D♭',flat:true},{pc:2,name:'D',flat:false},{pc:3,name:'E♭',flat:true},
+  {pc:4,name:'E',flat:false},{pc:5,name:'F',flat:true},{pc:6,name:'F♯',flat:false},{pc:7,name:'G',flat:false},
+  {pc:8,name:'A♭',flat:true},{pc:9,name:'A',flat:false},{pc:10,name:'B♭',flat:true},{pc:11,name:'B',flat:false}
+];
+const SHARP_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const FLAT_NAMES  = ['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+const mod = (n, m) => ((n % m) + m) % m;
+function noteName(midi, keyPc){ return (KEYS[keyPc].flat ? FLAT_NAMES : SHARP_NAMES)[mod(midi,12)]; }
+// Tonic register: G3..F#4 so cadences and notes sit in a comfortable middle range
+function tonicMidi(pc){ const t = 60 + pc; return t > 66 ? t - 12 : t; }
+// A position is a scale-step index s relative to the tonic (0 = tonic, 7 = tonic an octave up, -1 = 7 below)
+function posMidi(s, keyPc, scale='major'){ const st = SCALES[scale].steps; return tonicMidi(keyPc) + 12*Math.floor(s/7) + st[mod(s,7)]; }
+function posLabel(s, scale='major'){ return SCALES[scale].labels[mod(s,7)]; }
+// Resolution styles: nearest (default), down, up, thirds (e.g. 6-4-2-1), jump (straight to tonic), tonicFirst (tonic before nearest walk)
+function resolution(s, style){
+  const mode = style || (typeof S !== 'undefined' && S.settings && S.settings.resStyle) || 'nearest';
+  const d = mod(s,7), base = s - d, path = [s];
+  if (d === 0) return path;
+  if (mode === 'down'){ for (let x = s-1; x >= base; x--) path.push(x); return path; }
+  if (mode === 'up'){ for (let x = s+1; x <= base+7; x++) path.push(x); return path; }
+  if (mode === 'thirds'){ for (let x = s-2; x > base; x -= 2) path.push(x); path.push(base); return path; }
+  if (mode === 'jump'){ path.push(d <= 3 ? base : base + 7); return path; }
+  if (d <= 3) for (let x = s-1; x >= base; x--) path.push(x);
+  else for (let x = s+1; x <= base+7; x++) path.push(x);
+  if (mode === 'tonicFirst') path.unshift(d <= 3 ? base : base + 7);
+  return path;
+}
+function cadence(pc, oct=0, type='I-IV-V-I'){
+  const t = tonicMidi(pc) + 12*oct;
+  const I = [t-12,t,t+4,t+7], IV = [t-7,t,t+5,t+9], V = [t-5,t-1,t+2,t+7];
+  const V7 = [t-5,t-1,t+2,t+5,t+7], ii7 = [t-10,t,t+2,t+5,t+9], IM7 = [t-12,t,t+4,t+7,t+11];
+  switch (type){
+    case 'V7-I': return [V7, I];
+    case 'ii7-V7-I': return [ii7, V7, I];
+    case 'I': return [I];
+    case 'IM7': return [IM7];
+    case 'several tonics': return [[t-12, t, t+12]];
+    case 'tonic': return [[t]];
+    default: return [I, IV, V, I];
+  }
+}
+
+/* =====================================================================
+   LEVEL LADDER  (one setting changes at a time)
+   range: scale-step positions the notes can use
+   keyMode: 'C' fixed | 'block' new key every few questions | 'each' new key every question
+   input: 'numbers' | 'piano' (play the actual notes in the key you heard)
+   ===================================================================== */
+// Every range is bracketed by home notes (1) at the bottom and the top. RP (phrases and keyboard levels) is a window around the tonic, not bracketed.
+const R1 = [0,7], R2 = [-7,7], R3 = [-7,14], R4 = [-14,14], RP = [-3,10];
+const CAR_RANGES = { one:R1, two:R2, three:R3, four:R4 };
+const ALL7 = ['1','2','3','4','5','6','7'];
+const LEVELS = [
+  {title:'Home base: 1 3 5',    desc:'Key of C · one octave, which moves every round', degrees:['1','3','5'], range:R1, keyMode:'C', len:1, input:'numbers'},
+  {title:'Pentatonic: add 2, 6', desc:'1 2 3 5 6 · key of C. No 4 or 7 yet, so every note sounds stable', degrees:['1','2','3','5','6'], range:R1, keyMode:'C', len:1, input:'numbers'},
+  {title:'Add 4',                desc:'1–6 · key of C',                   degrees:['1','2','3','4','5','6'], range:R1, keyMode:'C', len:1, input:'numbers'},
+  {title:'Add 7: full scale', desc:'All seven · key of C',          degrees:ALL7, range:R1, keyMode:'C', len:1, input:'numbers'},
+  {title:'New key every round',  desc:'One octave · new key and octave each round', degrees:ALL7, range:R1, keyMode:'block', len:1, input:'numbers'},
+  {title:'3 octaves, new keys', desc:'Low to high · new key each round', degrees:ALL7, range:R3, keyMode:'block', len:1, input:'numbers'},
+  {title:'Two-note phrases',     desc:'Name both notes in order',         degrees:ALL7, range:RP, keyMode:'block', len:2, input:'numbers'},
+  {title:'Three-note phrases',   desc:'Short melodic fragments',          degrees:ALL7, range:RP, keyMode:'block', len:3, input:'numbers'},
+  {title:'Four-note phrases',    desc:'Longer fragments',                 degrees:ALL7, range:RP, keyMode:'block', len:4, input:'numbers'},
+  {title:'Play it: single notes', desc:'Find the note on the keyboard in the key you heard', degrees:ALL7, range:RP, keyMode:'block', len:1, input:'piano'},
+  {title:'Play it: two notes',   desc:'Keyboard · two-note phrases',      degrees:ALL7, range:RP, keyMode:'block', len:2, input:'piano'},
+  {title:'Play it: three notes', desc:'Keyboard · three-note phrases',    degrees:ALL7, range:RP, keyMode:'block', len:3, input:'piano'},
+  {title:'Play it: four notes',  desc:'Keyboard · four-note phrases',     degrees:ALL7, range:RP, keyMode:'block', len:4, input:'piano'},
+  {title:'Melodic dictation',    desc:'Keyboard · six-note melodies',     degrees:ALL7, range:RP, keyMode:'block', len:6, input:'piano'}
+];
+const COMING = ['Minor keys & modes','Chromatic notes','Hearing chord tones','Sing it back','Rhythm in dictation'];
+const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions per round (key and octave stay put)
+
+/* =====================================================================
+   STATE & STORAGE
+   ===================================================================== */
+const STORE = 'music.ear.v1';
+const DEFAULT_SETTINGS = {
+  cadenceEvery: 5, cadenceType: 'I-IV-V-I', resStyle: 'nearest', roundLen: 12, autoNext: true, showFeedback: true, speedLimit: 2, timingV3: 1, errorSound: true, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
+  tempo: 1, cadenceTempo: 1, noteTempo: 1, resTempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
+  car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
+};
+function freshState(){
+  return { v:1, current:0, unlocked:0, mastered:{}, hist:{}, levelDeg:{}, deg:{}, conf:{},
+           xp:0, total:0, bestStreak:0, days:{}, settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) };
+}
+let S = load();
+function normalize(s){
+  const f = freshState();
+  // Speed goal reset (Nov 2026): 2 seconds counted from the start of the tone is a good response.
+  if (s.settings && !s.settings.timingV3 && s.settings.speedLimit) s.settings.speedLimit = 2;
+  // Carry over legacy single tempo setting if the three separate speeds aren't set yet
+  if (s.settings && s.settings.tempo && s.settings.cadenceTempo === undefined){
+    const leg = s.settings.tempo === 0.8 ? 0.75 : s.settings.tempo === 1.25 ? 1.3 : 1;
+    s.settings.cadenceTempo = leg; s.settings.noteTempo = leg; s.settings.resTempo = leg;
+  }
+  s.settings = Object.assign(f.settings, s.settings||{}); if (!(s.settings.roundLen >= 10)) s.settings.roundLen = 12; s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
+  return Object.assign(f, s);
+}
+function load(){
+  try { const raw = localStorage.getItem(STORE); if (raw) return normalize(JSON.parse(raw)); } catch(e){}
+  return freshState();
+}
+// save() marks the progress as changed on this device (for syncing); saveRaw() doesn't.
+function saveRaw(){ try { localStorage.setItem(STORE, JSON.stringify(S)); } catch(e){} }
+function save(){ S.updatedAt = Date.now(); saveRaw(); }
+const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+function dayStreak(){
+  let n = 0; const d = new Date();
+  if (!S.days[today()]) d.setDate(d.getDate()-1);
+  for (;;){ const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if (S.days[k]) { n++; d.setDate(d.getDate()-1); } else break; }
+  return n;
+}
+const pushCap = (arr, v, cap) => { arr.push(v); while (arr.length > cap) arr.shift(); return arr; };
+
+/* =====================================================================
+   AUDIO: sampled piano (Salamander Grand, via the Tone.js sample host)
+   cached on the phone after the first load, with a synth fallback.
+   ===================================================================== */
+// Samples live next to the app (piano/); the Tone.js host is a backup.
+// Salamander Grand Piano (full-quality originals, velocity layer 8), A0–C8, one recording every 3 keys.
+// Files are named by MIDI note number. The Tone.js copy of the same piano is a backup (A1–C7 only).
+const SAMPLE_BASE = 'piano/', BACKUP_BASE = 'https://tonejs.github.io/audio/salamander/';
+const SAMPLE_LIST = (() => { const out = []; const names = {0:'C',3:'Ds',6:'Fs',9:'A'};
+  for (let m = 21; m <= 108; m++) if (names[m%12] !== undefined)
+    out.push({ midi:m, urls: [SAMPLE_BASE + m + '.m4a', ...(m >= 33 && m <= 96 ? [BACKUP_BASE + names[m%12] + (Math.floor(m/12)-1) + '.mp3'] : [])] });
+  return out; })();
+const release = m => m < 40 ? 2.2 : m < 55 ? 1.5 : m < 72 ? 0.9 : 0.6;
+const A = {
+  ctx:null, master:null, buffers:{}, raw:{}, live:new Set(),
+  // Samples load in the background; each one is used as soon as it is ready,
+  // so the app never waits on the network (a simple synth covers any gaps).
+  prefetch(onProg){
+    const total = SAMPLE_LIST.length; let done = 0, failed = 0;
+    this.fetching = Promise.all(SAMPLE_LIST.map(async s => {
+      try { this.raw[s.midi] = await fetchFirst(s.urls); if (this.ctx) this.decodeOne(s.midi); } catch(e){ failed++; }
+      done++; onProg(done/total);
+    })).then(() => failed);
+    return this.fetching;
+  },
+  decodeOne(k){
+    const raw = this.raw[k]; if (!raw || !this.ctx) return; delete this.raw[k];
+    try {
+      const p = this.ctx.decodeAudioData(raw, b => { this.buffers[k] = b; }, () => {});
+      if (p && p.then) p.then(b => { if (b) this.buffers[k] = b; }).catch(() => {});
+    } catch(e){}
+  },
+  // Let go of the iPhone's audio channel (so it leaves the Dynamic Island and lock screen) and take it back later.
+  released:false, relTimer:null,
+  engage(){
+    clearTimeout(this.relTimer);
+    if (!this.released) return;
+    this.released = false;
+    try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){}
+    makeSilent();
+    if (!this.ctx){ this.build(); this.decodeAll(); }
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(()=>{});
+  },
+  // iOS keeps a paused media element on the lock screen, so the silent loop is removed completely, not just paused.
+  dropSilent(){
+    const el = this.silentEl; if (!el) return;
+    try { el.pause(); el.removeAttribute('src'); el.load(); } catch(e){}
+    try { if (this.silentUrl) URL.revokeObjectURL(this.silentUrl); } catch(e){}
+    this.silentEl = null; this.silentUrl = null;
+  },
+  release(){
+    clearTimeout(this.relTimer);
+    this.relTimer = setTimeout(() => {
+      this.stopAll(); this.released = true;
+      this.dropSilent();
+      try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch(e){}
+      try { if (navigator.mediaSession){ navigator.mediaSession.playbackState = 'none'; navigator.mediaSession.metadata = null; } } catch(e){}
+      // Close the whole audio engine: a suspended one can still keep the app on the lock screen. Decoded samples are kept.
+      const c = this.ctx; this.ctx = null; this.master = null;
+      if (c) c.close().catch(()=>{});
+    }, 300);
+  },
+  build(){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    this.ctx = new AC();
+    const comp = this.ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 3;
+    this.master = this.ctx.createGain(); this.master.gain.value = masterGain();
+    this.master.connect(comp).connect(this.ctx.destination);
+  },
+  async start(){
+    if (this.ctx) return;
+    this.build();
+    if (this.ctx.state === 'suspended') await this.ctx.resume().catch(()=>{});
+  },
+  decodeAll(){ for (const k of Object.keys(this.raw)) this.decodeOne(k); },
+  get synth(){ return Object.keys(this.buffers).length < SAMPLE_LIST.length * 0.6; },
+  now(){ return this.ctx.currentTime; },
+  note(midi, t, dur, vel=0.8){
+    this.engage();
+    const ctx = this.ctx; const g = ctx.createGain(); g.connect(this.master);
+    let src, best = null, bd = 99;
+    for (const k in this.buffers){ const d = Math.abs(midi - k); if (d < bd){ bd = d; best = k; } }
+    if (best !== null && bd <= 3){
+      src = ctx.createBufferSource(); src.buffer = this.buffers[best];
+      src.playbackRate.value = Math.pow(2, (midi - best)/12);
+      g.gain.setValueAtTime(vel, t);
+      g.gain.setValueAtTime(vel, t + dur);
+      g.gain.setTargetAtTime(0.0001, t + dur, release(midi)/4);   // low notes ring out longer, like a real piano
+    } else {
+      src = ctx.createOscillator(); src.type = 'triangle'; src.frequency.value = 440*Math.pow(2,(midi-69)/12);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vel*0.5, t+0.01);
+      g.gain.exponentialRampToValueAtTime(vel*0.18, t+0.4); g.gain.exponentialRampToValueAtTime(0.0008, t+dur+0.4);
+    }
+    src.connect(g); src.start(t); src.stop(t + dur + release(midi)*1.5);
+    const rec = {src, g}; this.live.add(rec); src.onended = () => this.live.delete(rec);
+  },
+  // events: [{notes:[midi...], dur, vel}] played back to back. Resolves when finished.
+  async seq(events, token, onStep){
+    this.engage();
+    if (!this.ctx) return;
+    if (this.ctx.state !== 'running') await this.ctx.resume().catch(()=>{});
+    let t = this.now() + 0.06; const starts = [];
+    for (const e of events){ starts.push(t); for (const m of e.notes) this.note(m, t, e.dur*0.95, e.vel ?? 0.8); t += e.dur; }
+    if (onStep) starts.forEach((st,i) => setTimeout(() => { if (!token || !token.dead) onStep(i); }, Math.max(0,(st - this.now())*1000)));
+    await wait((t - this.now())*1000, token);
+  },
+  // A short low "wrong" tone: two slightly clashing low saw waves through a low-pass filter.
+  async error(token){
+    this.engage(); if (!this.ctx) return;
+    if (this.ctx.state !== 'running') await this.ctx.resume().catch(()=>{});
+    const ctx = this.ctx, t = this.now() + 0.06, g = ctx.createGain(), f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 420; g.connect(f); f.connect(this.master);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.32);
+    const oscs = [98, 103.5].map(fr => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = fr; o.connect(g); o.start(t); o.stop(t + 0.35); return o; });
+    const rec = { src: oscs[0], g }; this.live.add(rec); oscs[0].onended = () => this.live.delete(rec);
+    await wait(400, token);
+  },
+  stopAll(){
+    const t = this.ctx ? this.now() : 0;
+    for (const r of this.live){ try { r.g.gain.cancelScheduledValues(t); r.g.gain.setValueAtTime(r.g.gain.value, t); r.g.gain.exponentialRampToValueAtTime(0.0008, t+0.08); r.src.stop(t+0.1); } catch(e){} }
+    this.live.clear();
+  }
+};
+try { caches.delete('music-samples-v1'); } catch(e){}   // old sample set
+async function fetchFirst(urls){
+  let err; for (const u of urls){ try { return await fetchCached(u); } catch(e){ err = e; } } throw err;
+}
+async function fetchCached(url){
+  let cache = null;
+  try { cache = await caches.open('music-samples-v2'); const hit = await cache.match(url); if (hit) return await hit.arrayBuffer(); } catch(e){}
+  const ac = 'AbortController' in window ? new AbortController() : null;
+  const to = setTimeout(() => ac && ac.abort(), 15000);
+  let r;
+  try { r = await fetch(url, {mode:'cors', signal: ac ? ac.signal : undefined}); } finally { clearTimeout(to); }
+  if (!r.ok) throw new Error('fetch ' + r.status);
+  if (cache) try { await cache.put(url, r.clone()); } catch(e){}
+  return await r.arrayBuffer();
+}
+function wait(ms, token){ return new Promise(res => { const id = setTimeout(res, ms); if (token) token.timers.push([id,res]); }); }
+function newToken(){ return { dead:false, timers:[] }; }
+function kill(token){ if (!token) return; token.dead = true; for (const [id,res] of token.timers){ clearTimeout(id); res(); } token.timers = []; }
+
+// iPhone: route Web Audio as media playback so the ringer/silent switch doesn't mute it.
+// With voice answers on, the session is put in play-and-record mode from the start, so iOS doesn't switch modes
+// (and glitch the sound) at the moment the microphone turns on.
+// With voice answers on the iPhone plays quieter, so the notes get a boost (setting, default louder).
+const masterGain = () => S.settings.volume * (S.settings.voiceOn ? (S.settings.voiceBoost || 1.5) : 1);
+const audioType = () => (S.settings.voiceOn && (window.SpeechRecognition || window.webkitSpeechRecognition)) ? 'play-and-record' : 'playback';
+function unlockIOS(){
+  try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){}
+  makeSilent();
+}
+function makeSilent(){
+  if (A.silentEl) return;
+  try {
+    const sr = 8000, n = sr/2, buf = new ArrayBuffer(44 + n*2), v = new DataView(buf);
+    const w = (o,s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+    w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true);
+    v.setUint16(22,1,true); v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+    w(36,'data'); v.setUint32(40,n*2,true);
+    const el = document.createElement('audio'); A.silentUrl = URL.createObjectURL(new Blob([buf],{type:'audio/wav'})); el.src = A.silentUrl;
+    el.loop = true; el.setAttribute('playsinline',''); el.volume = 0.01; el.play().catch(()=>{});
+    A.silentEl = el;
+  } catch(e){}
+}
+// When the app comes back to the front, check GitHub for a newer version and reload if idle.
+let pendingUpdate = false;
+async function checkForUpdate(){
+  try {
+    const r = await fetch(location.pathname + '?check=' + Date.now(), {cache:'no-store'});
+    const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/);
+    if (m && m[1] !== APP_VERSION){
+      // Only try once per new version: if a reload still gave us the old page, don't loop.
+      let tried = null; try { tried = sessionStorage.getItem('ear.updateTried'); } catch(e){}
+      if (tried === m[1]) return;
+      pendingUpdate = m[1]; applyUpdateIfIdle();
+    }
+  } catch(e){}
+}
+function applyUpdateIfIdle(){
+  if (!pendingUpdate) return;
+  const busy = Car.running || (T.phase !== 'idle') || !$('modal').classList.contains('hidden') || !$('lvlOv').classList.contains('hidden');
+  if (busy) return;
+  // Load the new version from an address iOS hasn't cached (a plain reload can return the old page).
+  const go = () => { try { sessionStorage.setItem('ear.updateTried', pendingUpdate); } catch(e){}
+    location.replace(location.pathname + '?v=' + encodeURIComponent(pendingUpdate)); };
+  if (!$('startOv').classList.contains('hidden')){ go(); return; }
+  toast('Updating to the latest version…'); setTimeout(go, 900);
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden){ checkForUpdate(); if (T.phase === 'idle' && !Car.running) syncPull().catch(syncErr); }
+  else if (localChanged()) syncPull().catch(syncErr);
+});
+setInterval(applyUpdateIfIdle, 5000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && A.ctx && A.ctx.state !== 'running') A.ctx.resume().catch(()=>{});
+  if (!document.hidden && Car.running) requestWake();
+  if (document.hidden && T.phase === 'idle' && !Car.running) A.release();
+});
+
+
+/* =====================================================================
+   ADAPTIVE ENGINE
+   ===================================================================== */
+const accOf = arr => arr && arr.length ? arr.filter(Boolean).length / arr.length : null;
+// Weight degrees so weak and newly added ones come up more often.
+function degWeight(label, lvl){
+  const rec = (S.levelDeg[lvl] && S.levelDeg[lvl][label]) || [];
+  const acc = accOf(rec.slice(-10));
+  let w = 1;
+  if (rec.length < 6) w += 1.5;            // new degree: extra exposure
+  if (acc !== null) w += 3 * (1 - acc);     // weak degree: more practice
+  return w;
+}
+function topConfusions(n=5, within){
+  return Object.entries(S.conf)
+    .map(([k,v]) => { const [a,b] = k.split('>'); return {a,b,v}; })
+    .filter(x => x.v >= 0.65 && (!within || (within.includes(x.a) && within.includes(x.b))))
+    .sort((x,y) => y.v - x.v).slice(0,n);
+}
+// Pool symmetric mix-ups (e.g. 4>5 and 5>4) for targeted drilling in Train and Car modes.
+function topConfusionPairs(n=3, within){
+  const map = {};
+  for (const [k,v] of Object.entries(S.conf)){
+    const [a,b] = k.split('>');
+    if (!a || !b || a === b) continue;
+    if (within && (!within.includes(a) || !within.includes(b))) continue;
+    const key = a < b ? a + '|' + b : b + '|' + a;
+    map[key] = (map[key] || 0) + v;
+  }
+  return Object.entries(map)
+    .map(([k,v]) => { const [a,b] = k.split('|'); return {a,b,v}; })
+    .filter(x => x.v >= 0.85)
+    .sort((x,y) => y.v - x.v).slice(0,n);
+}
+function weightedPick(items, weights){
+  const tot = weights.reduce((a,b)=>a+b,0); let r = Math.random()*tot;
+  for (let i=0;i<items.length;i++){ r -= weights[i]; if (r <= 0) return items[i]; }
+  return items[items.length-1];
+}
+function positionsFor(label, range){ const out = []; for (let s = range[0]; s <= range[1]; s++) if (posLabel(s) === label) out.push(s); return out; }
+
+function pickSingle(lvl, avoidS){
+  const L = LEVELS[lvl];
+  let label, drill = false;
+  const confs = topConfusionPairs(3, L.degrees);
+  if (confs.length && Math.random() < 0.3){
+    const c = confs[Math.floor(Math.random()*confs.length)];
+    const prev = avoidS != null ? posLabel(avoidS) : null;
+    label = prev === c.a && Math.random() < 0.7 ? c.b : prev === c.b && Math.random() < 0.7 ? c.a : (Math.random() < 0.5 ? c.a : c.b);
+    drill = c;
+  } else {
+    label = weightedPick(L.degrees, L.degrees.map(d => degWeight(d, lvl) * (avoidS != null && posLabel(avoidS)===d ? 0.35 : 1)));
+  }
+  const ps = positionsFor(label, L.range);
+  return { s: ps[Math.floor(Math.random()*ps.length)], drill };
+}
+// Phrases: a random walk that prefers steps and small leaps, like real melodies.
+const STEP_W = {0:0.4, 1:4, 2:2.6, 3:1.4, 4:0.9, 5:0.4, 7:0.3};
+function pickPhrase(lvl){
+  const L = LEVELS[lvl];
+  const first = pickSingle(lvl).s;
+  const out = [first];
+  while (out.length < L.len){
+    const cur = out[out.length-1]; const cand = [], w = [];
+    for (let s = L.range[0]; s <= L.range[1]; s++){
+      const iv = Math.abs(s - cur); if (STEP_W[iv] === undefined) continue;
+      if (!L.degrees.includes(posLabel(s))) continue;
+      cand.push(s); w.push(STEP_W[iv] * (0.6 + 0.4*degWeight(posLabel(s), lvl)));
+    }
+    out.push(weightedPick(cand, w));
+  }
+  return out;
+}
+
+const T = { q:null, ans:[], phase:'idle', start:0, sinceCad:99, cadKey:null, key:0, roundKey:null, roundOct:null, roundCount:0, streak:0, token:null, aux:null, qEnd:0, workStart:0, lastAnsAt:0 };
+// One "round" = a stretch of questions in one key and one octave. Both change together, once, at the
+// round boundary. Review questions from earlier levels join the round's key and octave, so nothing jumps around in between.
+function startRoundIfNeeded(){
+  if (T.roundKey == null || T.roundCount >= roundLen()){
+    T.roundKey = randKey(T.roundKey);
+    let o; do { o = Math.floor(Math.random()*3) - 1; } while (o === T.roundOct); T.roundOct = o;
+    T.roundCount = 0;
+  }
+  T.roundCount++;
+}
+const chooseKey = () => LEVELS[S.current].keyMode === 'C' ? 0 : T.roundKey;
+function randKey(avoid){ let k; do { k = Math.floor(Math.random()*12); } while (k === avoid); return k; }
+
+function makeQuestion(){
+  let lvl = S.current, review = false;
+  const pool = []; for (let i=0;i<S.current;i++) if (S.mastered[i] !== undefined) pool.push(i);
+  if (pool.length && Math.random()*100 < S.settings.reviewPct){ lvl = pool[Math.floor(Math.random()*pool.length)]; review = true; }
+  const L = LEVELS[lvl];
+  startRoundIfNeeded();
+  const key = chooseKey();
+  T.key = key;
+  let pos, drill = false;
+  if (L.len === 1){ const p = pickSingle(lvl, T.q && T.q.pos.length===1 ? T.q.pos[0] : null); pos = [p.s]; drill = p.drill; }
+  else pos = pickPhrase(lvl);
+  // One-octave levels: the octave (below / middle / above) is the round's octave; the cadence moves with it.
+  let oct = 0;
+  if (L.range === R1 && LEVELS[S.current].range === R1){ oct = T.roundOct; pos = pos.map(s => s + 7*oct); }
+  return { lvl, review, drill, key, oct, pos, labels: pos.map(s => posLabel(s)), midi: pos.map(s => posMidi(s, key)), len: L.len, input: inputFor(L) };
+}
+
+function masteryInfo(lvl){
+  const L = LEVELS[lvl]; const W = L.len === 1 ? 20 : 15;
+  const h = (S.hist[lvl] || []).filter(x => !x.r).slice(-W);
+  const n = h.length, ok = h.filter(x => x.ok);
+  const acc = n ? ok.length/n : 0;
+  const target = L.len === 1 ? 0.9 : 0.8;
+  const times = ok.map(x => x.t).sort((a,b)=>a-b);
+  const med = times.length ? times[Math.floor(times.length/2)] : Infinity;
+  const limit = S.settings.speedLimit ? (L.len === 1 ? S.settings.speedLimit : S.settings.speedLimit * (0.6 + 0.55*L.len)) : 0;
+  const speedOk = !limit || med <= limit*1000;
+  const degs = L.degrees.map(d => { const r = ((S.levelDeg[lvl]||{})[d]) || []; const a = accOf(r.slice(-6)); return {d, ok: r.length >= 4 && a >= 0.75}; });
+  const degOk = degs.every(x => x.ok);
+  const mastered = n >= W && acc >= target && speedOk && degOk;
+  const prog = Math.min(1, n/W)*0.35 + Math.min(1, acc/target)*Math.min(1,n/W)*0.4 + (degs.filter(x=>x.ok).length/degs.length)*0.15 + (speedOk && n ? 0.1 : 0);
+  return { n, W, acc, target, med, limit, speedOk, degOk, degs, mastered, prog: mastered ? 1 : Math.min(prog, 0.97) };
+}
+
+/* =====================================================================
+   TRAIN MODE
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const cadenceTempo = () => S.settings.cadenceTempo || 1;
+const noteTempo = () => S.settings.noteTempo || 1;
+const resTempo = () => S.settings.resTempo || 1;
+const ev = (notes, dur, vel, spd) => ({ notes: Array.isArray(notes) ? notes : [notes], dur: dur / (spd || noteTempo()), vel });
+const cadenceEvents = (k, oct=0) => { const cs = cadence(k, oct, S.settings.cadenceType || 'I-IV-V-I'); return cs.map((c,i) => ev(c, i === cs.length - 1 ? 1.25 : 0.72, c.length === 1 ? 0.78 : 0.62, cadenceTempo())); };
+
+async function playCadence(key, token, oct=0){ await A.seq(cadenceEvents(key, oct), token); }
+async function playQuestionNotes(q, token, onStep){
+  const d = q.len === 1 ? 1.1 : 0.62;
+  await A.seq(q.midi.map(m => ev(m, d, 0.85, noteTempo())), token, onStep);
+}
+// With lightPad, the number pad lights up in step with the notes: 1 2 3 4 on the top row resolve right to left,
+// 5 6 7 and the upper 1 on the bottom row resolve left to right.
+const clearPadLights = () => document.querySelectorAll('#tPad .res-lit, #tPiano .res-lit').forEach(b => b.classList.remove('res-lit'));
+async function playResolution(s, key, token, lightPad){
+  const path = resolution(s), base = s - mod(s,7);
+  const evs = path.map((x,i) => ev(posMidi(x,key), i === path.length-1 ? 0.9 : 0.42, 0.8, resTempo()));
+  const slots = path.map(x => x === base+7 ? 7 : mod(x,7));
+  // On the keyboard, shift the path by octaves only if a note isn't on the keys showing (e.g. replaying your wrong answer).
+  const mids = path.map(x => posMidi(x,key));
+  const keysM = [...$('tPiano').querySelectorAll('[data-m]')].map(k => +k.dataset.m), kLo = Math.min(...keysM), kHi = Math.max(...keysM);
+  const shift = [0,12,-12,24,-24].find(k => mids.every(m => m+k >= kLo && m+k <= kHi)) ?? 0;
+  const onStep = lightPad ? i => { clearPadLights();
+    const b = $('tPiano').classList.contains('hidden') ? $('tPad').children[slots[i]] : $('tPiano').querySelector(`[data-m="${mids[i]+shift}"]`);
+    if (b) b.classList.add('res-lit'); } : undefined;
+  try { await A.seq(evs, token, onStep); }
+  finally { if (lightPad) clearPadLights(); }
+}
+
+// How answers are given: the number pad or the on-screen keyboard. 'level' follows the level; the toggle on the
+// training screen (or Settings) overrides it on every level.
+function inputFor(L){ const a = S.settings.answerWith; return a === 'pad' ? 'numbers' : a === 'piano' ? 'piano' : L.input; }
+function updateInputBtn(usePiano){ const b = $('bInput'); if (b) b.textContent = usePiano ? '🎹 Keys' : '123 Pad'; }
+function toggleInput(){
+  const nowPiano = (T.q ? T.q.input : inputFor(LEVELS[S.current])) === 'piano';
+  S.settings.answerWith = nowPiano ? 'pad' : 'piano'; save();
+  const q = T.q;
+  if (q && T.phase === 'answering' && T.ans.length === 0){ q.input = inputFor(LEVELS[q.lvl]); renderPad(q); renderSlots(q); }
+  else if (!q || T.phase === 'idle') renderPad(null);
+  else updateInputBtn(!nowPiano);
+  toast(S.settings.answerWith === 'piano' ? 'Answering on the keyboard' : 'Answering on the number pad');
+}
+function renderPad(q){
+  const pad = $('tPad'), piano = $('tPiano');
+  const usePiano = (q ? q.input : inputFor(LEVELS[S.current])) === 'piano';
+  updateInputBtn(usePiano);
+  pad.classList.toggle('hidden', usePiano); piano.classList.toggle('hidden', !usePiano);
+  if (usePiano){ renderPiano(q ? q.key : (T.roundKey || 0), q); return; }
+  const active = q ? LEVELS[q.lvl].degrees : LEVELS[S.current].degrees;
+  // 1–7 plus the upper 1, so the pad reads as a full octave in two rows of four
+  pad.innerHTML = [...ALL7, '1'].map(d => `<button class="deg ${d==='1'?'tonic':''} ${active.includes(d)?'':'off'}" data-d="${d}">${d}</button>`).join('');
+}
+// Keyboard: C up to E of the next octave, covers every pitch in any key.
+// The keys shown always include both home notes (1 and the upper 1) and every note the question and its resolution
+// play, so the note you hear is always on the keyboard to tap (padded out to white keys at both ends).
+function pianoWindow(key, q){
+  const t = posMidi(q ? 7*q.oct : 0, key); let lo = t, hi = t + 12;
+  if (q){ const all = [...q.midi]; q.pos.forEach(x => resolution(x).forEach(r => all.push(posMidi(r,key))));
+    lo = Math.min(lo, ...all); hi = Math.max(hi, ...all); }
+  while ([1,3,6,8,10].includes(mod(lo,12))) lo--;
+  while ([1,3,6,8,10].includes(mod(hi,12))) hi++;
+  return [lo, hi];
+}
+function renderPiano(key, q){
+  const [lo, hi] = pianoWindow(key, q), el = $('tPiano');
+  const whites = []; for (let m = lo; m <= hi; m++) if (![1,3,6,8,10].includes(m%12)) whites.push(m);
+  const ww = 100 / whites.length; let html = '';
+  const lab = m => S.settings.labelKeys ? `<span class="key-lab">${noteName(m,key)}</span>` : '';
+  const dot = m => S.settings.markTonic && m%12 === key ? '<span class="key-dot"></span>' : '';
+  whites.forEach(m => { html += `<div class="wk" data-m="${m}">${lab(m)}${dot(m)}</div>`; });
+  whites.forEach((m,i) => { const b = m+1; if ([1,3,6,8,10].includes(b%12) && b <= hi)
+    html += `<div class="bk" data-m="${b}" style="left:${(i+1)*ww - ww*0.31}%;width:${ww*0.62}%">${lab(b)}${dot(b)}</div>`; });
+  el.innerHTML = html;
+}
+
+function renderSlots(q, results){
+  const el = $('tSlots');
+  // single-note questions: the number pad / keyboard already shows right and wrong, so no answer box
+  el.classList.toggle('hidden', !q || q.len === 1);
+  if (!q || q.len === 1){ el.innerHTML = ''; return; }
+  let h = '';
+  for (let i=0;i<q.len;i++){
+    const a = T.ans[i]; let cls = 'slot', txt = '', sub = '';
+    if (a !== undefined) txt = q.input === 'piano' ? noteName(a.midi, q.key) : a.label;
+    if (results){ cls += results[i] ? ' ok' : ' no';
+      if (!results[i]) sub = q.input === 'piano' ? noteName(q.midi[i], q.key) : q.labels[i]; }
+    else if (i === T.ans.length) cls += ' cur';
+    h += `<div class="${cls}" data-i="${i}">${txt || (results ? '–' : '')}${sub ? `<small>${sub}</small>` : ''}</div>`;
+  }
+  el.innerHTML = h;
+}
+function setMsg(big, small, cls){ $('tMsg').innerHTML = `<div class="big ${cls||''}">${big}</div><div class="small">${small||''}</div>`; }
+function setKeyLabel(k){ $('tKey').innerHTML = `<b>${KEYS[k].name}</b>`; }
+function setChip(q){
+  const c = $('tChip');
+  if (q && q.review){ c.className = 'chip review'; c.textContent = 'Review'; }
+  else if (q && q.drill){ c.className = 'chip drill'; c.textContent = `${q.drill.a} vs ${q.drill.b}`; }
+  else c.className = 'chip hidden';
+}
+
+async function nextQuestion(){
+  kill(T.token); kill(T.aux); A.stopAll(); const token = T.token = newToken();
+  const q = makeQuestion(); T.q = q; T.ans = []; T.results = null;
+  T.phase = 'playing';
+  $('bGo').classList.add('hidden'); $('bCompare').disabled = true; $('bGiveUp').disabled = true;
+  setKeyLabel(q.key); setChip(q); renderPad(q); renderSlots(q); lockPad(true);
+  // VOICE: the first time, the mic takes a moment to switch on and iOS changes audio mode; do that before any sound (even the cadence)
+  const vr = voiceListen();
+  if (vr){ setMsg('Getting the microphone ready…', ''); await vr; if (token.dead) return; await wait(500, token); if (token.dead) return;
+    try { if (A.ctx && A.ctx.state !== 'running') await A.ctx.resume(); } catch(e){} }
+  const needCad = q.key !== T.cadKey || q.oct !== T.cadOct || T.sinceCad >= (S.settings.cadenceEvery || 999);
+  if (needCad){
+    setMsg(T.cadKey !== null && q.key !== T.cadKey ? `New key: ${KEYS[q.key].name}` : T.cadKey !== null && q.oct !== T.cadOct ? (q.oct > T.cadOct ? 'Up an octave' : 'Down an octave') : `Key of ${KEYS[q.key].name}`, 'Listen to the cadence…');
+    await playCadence(q.key, token, q.oct); if (token.dead) return;
+    T.cadKey = q.key; T.cadOct = q.oct; T.sinceCad = 0;
+    await wait(380, token); if (token.dead) return;
+  }
+  T.sinceCad++;
+  setMsg(q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : '');
+  T.phase = 'answering'; T.voiceOpen = performance.now(); lockPad(false); $('bGiveUp').disabled = false;
+  const noteDur = (q.len === 1 ? 1.1 : 0.62) / noteTempo();
+  T.start = performance.now() + (q.len === 1 ? 0 : (q.len-1)*noteDur*1000);   // response time counts from the START of the tone (of the last note, for phrases)
+  T.qEnd = performance.now() + q.len*noteDur*1000;
+  await playQuestionNotes(q, token);
+}
+function lockPad(on){ $('tPad').classList.toggle('locked', on); }
+
+function onAnswer(a){
+  if (T.phase !== 'answering' || !T.q) return;
+  const q = T.q;
+  T.ans.push(a); renderSlots(q);
+  if (q.input === 'numbers'){
+    const b = T.tapped;
+    if (b){ b.classList.add('flash-tap'); setTimeout(() => b.classList.remove('flash-tap'), 160); }
+  }
+  if (T.ans.length >= q.len) grade();
+}
+
+async function grade(){
+  const q = T.q; T.phase = 'feedback'; lockPad(true); $('bGiveUp').disabled = true;
+  const lastAt = T.ans.length ? T.ans[T.ans.length-1].at : 0, t = Math.max(0, (lastAt || performance.now()) - T.start);
+  kill(T.aux);
+  const res = q.labels.map((l,i) => q.input === 'piano' ? mod(T.ans[i].midi,12) === mod(q.midi[i],12) : T.ans[i].label === l);
+  const ok = res.every(Boolean);
+  T.results = res;
+  // stats
+  const lvl = q.lvl;
+  pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok, t: Math.round(t), r: q.review ? 1 : 0 }, 40);
+  S.levelDeg[lvl] = S.levelDeg[lvl] || {};
+  for (const k in S.conf){ S.conf[k] *= 0.994; if (S.conf[k] < 0.05) delete S.conf[k]; }
+  q.labels.forEach((l,i) => {
+    pushCap(S.levelDeg[lvl][l] = S.levelDeg[lvl][l] || [], res[i], 12);
+    S.deg[l] = S.deg[l] || {r:[], t:[]};
+    pushCap(S.deg[l].r, res[i], 30);
+    if (res[i] && q.len === 1) pushCap(S.deg[l].t, Math.round(t), 20);
+    if (!res[i]){
+      const given = q.input === 'piano' ? (pcToLabel(T.ans[i].midi, q.key) || '♯/♭') : T.ans[i].label;
+      S.conf[l + '>' + given] = (S.conf[l + '>' + given] || 0) + 1;
+    }
+  });
+  S.total++; S.days[today()] = (S.days[today()] || 0) + 1;
+  SY.sincePush = (SY.sincePush || 0) + 1; if (SY.sincePush >= 10) syncSoon();
+  if (ok){ T.streak++; S.xp += 10*q.len + Math.min(T.streak, 20); S.bestStreak = Math.max(S.bestStreak, T.streak); }
+  else T.streak = 0;
+  save();
+
+  // feedback
+  renderSlots(q, res);
+  $('tStreak').textContent = T.streak >= 3 ? `🔥 ${T.streak}` : '';
+  const secs = (t/1000).toFixed(1);
+  const lim = masteryInfo(lvl).limit;
+  if (q.input === 'numbers' && q.len === 1){
+    const btn = T.tapped;
+    btn && btn.classList.add(ok ? 'flash-ok' : 'flash-no');
+    if (!ok) document.querySelectorAll(`.deg[data-d="${q.labels[0]}"]`).forEach(r => r.classList.add('reveal'));
+  }
+  if (q.input === 'piano') markPianoResult(q, res);
+  if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), S.settings.showFeedback !== false ? (lim && t > lim*1000 ? `Correct, but aim for under ${lim.toFixed(1)}s (${secs}s)` : `${secs}s`) : '', 'good');
+  else if (q.len === 1) setMsg(`It was ${q.input==='piano' ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, `You answered ${q.input==='piano' ? noteName(T.ans[0].midi,q.key) : T.ans[0].label} · tap Compare to hear both`, 'bad');
+  else setMsg('Not quite', `Correct: ${q.labels.join(' ')}`, 'bad');
+  $('bCompare').disabled = !(q.len === 1 && !ok);
+
+  const token = T.token = newToken();
+  // let the question finish sounding before resolving
+  await wait(Math.max(0, T.qEnd - performance.now()), token); if (token.dead) return;
+  // wrong answer: a short low error tone, a pause, then the sustained correct note(s) and the resolution
+  if (!ok && S.settings.errorSound !== false){ await A.error(token); if (token.dead) return; await wait(450, token); if (token.dead) return; }
+  if (!ok){
+    await wait(S.settings.errorSound !== false ? 0 : 250, token); if (token.dead) return;
+    await playQuestionNotes(q, token, q.len > 1 ? i => highlightSlot(i) : undefined); if (token.dead) return;
+    if (q.len > 1) highlightSlot(-1);
+    await wait(250, token); if (token.dead) return;
+  } else await wait(150, token);
+  if (token.dead) return;
+  await playResolution(q.pos[q.pos.length-1], q.key, token, true);
+  if (token.dead) return;
+
+  // mastery
+  updateHeader();
+  if (!q.review && lvl === S.current){
+    const m = masteryInfo(lvl);
+    if (m.mastered && S.mastered[lvl] === undefined){
+      S.mastered[lvl] = today();
+      if (lvl + 1 < LEVELS.length){ S.unlocked = Math.max(S.unlocked, lvl+1); S.current = lvl+1; }
+      save(); updateHeader(); showLevelUp(lvl); return;
+    }
+  }
+  if (S.days[today()] === S.settings.dailyGoal){ showGoalReached(); return; }
+  if (breakDue()){ showBreak(); return; }
+  if (S.settings.autoNext){ await wait(650, token); if (!token.dead && activeView === 'train') nextQuestion(); else if (!token.dead) showNext(); }
+  else showNext();
+}
+function showNext(){ $('bGo').textContent = 'Next'; $('bGo').classList.remove('hidden'); }
+function highlightSlot(i){ document.querySelectorAll('#tSlots .slot').forEach((s,j) => s.classList.toggle('hl', j === i)); }
+function pcToLabel(midi, key){ const i = SCALES.major.steps.indexOf(mod(midi - key, 12)); return i < 0 ? null : SCALES.major.labels[i]; }
+const pick = a => a[Math.floor(Math.random()*a.length)];
+function markPianoResult(q, res){
+  const el = $('tPiano');
+  el.querySelectorAll('.k-ok,.k-no').forEach(k => k.classList.remove('k-ok','k-no'));
+  if (q.len !== 1) return;
+  const given = el.querySelector(`[data-m="${T.ans[0].midi}"]`); given && given.classList.add(res[0] ? 'k-ok' : 'k-no');
+  if (!res[0]){ const want = el.querySelector(`[data-m="${q.midi[0]}"]`) || [...el.querySelectorAll('[data-m]')].find(k => mod(+k.dataset.m,12) === mod(q.midi[0],12)); want && want.classList.add('k-ok'); }
+}
+
+async function compare(){
+  const q = T.q; if (!q || q.len !== 1 || !T.results || T.results[0]) return;
+  kill(T.token); A.stopAll(); const token = T.token = newToken();
+  // your answer, resolved, then the real note, resolved
+  let gs;
+  if (q.input === 'piano'){ const lab = pcToLabel(T.ans[0].midi, q.key); if (!lab){ A.note(T.ans[0].midi, A.now()+0.05, 1); await wait(1300, token); }
+    else gs = nearestPos(lab, q.pos[0]); }
+  else gs = nearestPos(T.ans[0].label, q.pos[0]);
+  if (gs !== undefined){ setMsg(`Your answer: ${posLabel(gs)}`, '', 'bad'); await A.seq([ev(posMidi(gs,q.key),1.0,0.85)], token); if (token.dead) return; await playResolution(gs, q.key, token, true); if (token.dead) return; await wait(500, token); }
+  setMsg(`The note: ${q.labels[0]}`, '', 'good'); await A.seq([ev(q.midi[0],1.0,0.85)], token); if (token.dead) return; await playResolution(q.pos[0], q.key, token, true);
+  if (!token.dead) showNext();
+}
+async function giveUp(){
+  if (T.phase !== 'answering' || !T.q) return;
+  const q = T.q; T.phase = 'feedback'; lockPad(true);
+  $('bGiveUp').disabled = true; $('bCompare').disabled = true;
+  kill(T.token); kill(T.aux); A.stopAll(); clearVoicePending();
+  const res = q.labels.map(() => false); T.results = res;
+  const lvl = q.lvl;
+  pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok: false, t: 0, r: q.review ? 1 : 0 }, 40);
+  S.levelDeg[lvl] = S.levelDeg[lvl] || {};
+  q.labels.forEach(l => {
+    pushCap(S.levelDeg[lvl][l] = S.levelDeg[lvl][l] || [], false, 12);
+    S.deg[l] = S.deg[l] || {r:[], t:[]};
+    pushCap(S.deg[l].r, false, 30);
+  });
+  S.total++; S.days[today()] = (S.days[today()] || 0) + 1;
+  SY.sincePush = (SY.sincePush || 0) + 1; if (SY.sincePush >= 10) syncSoon();
+  T.streak = 0; $('tStreak').textContent = '';
+  save();
+  renderSlots(q, res);
+  if (q.input === 'numbers' && q.len === 1){
+    document.querySelectorAll(`.deg[data-d="${q.labels[0]}"]`).forEach(r => r.classList.add('reveal'));
+  }
+  if (q.input === 'piano' && q.len === 1){
+    const el = $('tPiano');
+    const want = el.querySelector(`[data-m="${q.midi[0]}"]`) || [...el.querySelectorAll('[data-m]')].find(k => mod(+k.dataset.m,12) === mod(q.midi[0],12));
+    want && want.classList.add('k-ok');
+  }
+  if (q.len === 1) setMsg(`It was ${q.input==='piano' ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, 'Listen to the note and resolution', 'bad');
+  else setMsg(`Answer: ${q.labels.join(' ')}`, 'Listen to the phrase and resolution', 'bad');
+  const token = T.token = newToken();
+  await wait(200, token); if (token.dead) return;
+  await playQuestionNotes(q, token, q.len > 1 ? i => highlightSlot(i) : undefined); if (token.dead) return;
+  if (q.len > 1) highlightSlot(-1);
+  await wait(250, token); if (token.dead) return;
+  await playResolution(q.pos[q.pos.length-1], q.key, token, true); if (token.dead) return;
+  updateHeader();
+  if (S.days[today()] === S.settings.dailyGoal){ showGoalReached(); return; }
+  if (breakDue()){ showBreak(); return; }
+  if (S.settings.autoNext){ await wait(650, token); if (!token.dead && activeView === 'train') nextQuestion(); else if (!token.dead) showNext(); }
+  else showNext();
+}
+function nearestPos(label, near){ let best, bd = 99; for (let s = near-7; s <= near+7; s++) if (posLabel(s) === label && Math.abs(s-near) < bd){ bd = Math.abs(s-near); best = s; } return best; }
+
+function modal({icon, title, text, buttons}){
+  $('mIcon').textContent = icon || ''; $('mTitle').textContent = title; $('mText').innerHTML = text || '';
+  const box = $('mBtns'); box.innerHTML = '';
+  buttons.forEach(b => { const el = document.createElement('button'); el.className = 'go' + (b.ghost ? ' ghost' : ''); el.textContent = b.label;
+    el.onclick = () => { $('modal').classList.add('hidden'); b.fn && b.fn(); }; box.appendChild(el); });
+  $('modal').classList.remove('hidden');
+}
+// Break reminder: counts time spent answering; a pause of 3+ minutes counts as a break already taken
+function breakDue(){
+  const mins = S.settings.breakEvery, now = Date.now();
+  if (T.lastAnsAt && now - T.lastAnsAt > 180000) T.workStart = 0;
+  T.lastAnsAt = now;
+  if (!T.workStart) T.workStart = now;
+  return !!mins && now - T.workStart >= mins*60000;
+}
+function showBreak(){
+  const mins = Math.max(1, Math.round((Date.now() - T.workStart)/60000));
+  modal({ icon:'☕', title:'Time for a break', 
+    text:`You’ve been at it for about ${mins} minutes. Short sessions, spread through the day, work better than one long one.`,
+    buttons:[
+      {label:'Take a break', fn: () => { T.workStart = 0; T.lastAnsAt = 0; resetTrainIdle(); toast('Nice work. Progress is saved.'); goToStartScreen(); }},
+      {label:'Keep going', ghost:true, fn: () => { T.workStart = Date.now(); nextQuestion(); }}
+    ]});
+}
+function showGoalReached(){
+  confetti();
+  const due = backupDue();
+  modal({ icon:'🎯', title:'Daily goal reached!',
+    text:`${S.settings.dailyGoal} answers today. Day streak: ${dayStreak()}.` + (due ? '<br><br>It’s been a while since your last backup.' : ''),
+    buttons:[
+      ...(due ? [{label:'Back up progress', fn: () => exportProgress().then(() => showGoalReachedAfter())}] : []),
+      {label:'Keep going', ghost: due, fn: () => nextQuestion()},
+      {label:'Done for today', ghost:true, fn: () => { resetTrainIdle(); toast('Nice work. Progress is saved.'); goToStartScreen(); }}
+    ]});
+}
+function showGoalReachedAfter(){
+  modal({ icon:'✅', title:'Backed up', text:'', buttons:[
+    {label:'Keep going', fn: () => nextQuestion()},
+    {label:'Done for today', ghost:true, fn: () => { resetTrainIdle(); goToStartScreen(); }} ]});
+}
+const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+function backupDue(){ return S.total >= 20 && !(SY.token && SY.lastSyncAt && Date.now() - SY.lastSyncAt < 7*86400000) && !(S.snoozeUntil && today() < S.snoozeUntil)
+  && daysBetween(S.lastBackup || S.firstUse || today(), today()) >= 7; }
+function snoozeBackup(){ const d = new Date(); d.setDate(d.getDate()+3);
+  S.snoozeUntil = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); save(); }
+async function exportProgress(){
+  const name = `ear-trainer-${today()}.json`;
+  const prev = S.lastBackup; S.lastBackup = today();
+  const json = JSON.stringify(S);
+  try {
+    const file = new File([json], name, {type:'application/json'});
+    if (navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:'Ear Trainer progress'}); save(); toast('Backup saved'); return true;
+    }
+  } catch(e){ if (e && e.name === 'AbortError'){ S.lastBackup = prev; return false; } }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], {type:'application/json'}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove(); save(); return true;
+}
+function showLevelUp(lvl){
+  const next = LEVELS[lvl+1];
+  $('lvlOvTitle').textContent = `Level ${lvl+1} mastered!`;
+  $('lvlOvText').innerHTML = next ? `Up next: <b>${next.title}</b><br>${next.desc}` : 'You have finished every major-key level. Minor keys and chords are coming next.';
+  $('lvlOv').classList.remove('hidden'); confetti();
+}
+function confetti(){
+  const cols = ['#7eabff','#5a86ee','#bfe3ff','#b69cff','#d9895a'];
+  for (let i=0;i<40;i++){ const c = document.createElement('div'); c.className = 'confetti';
+    c.style.left = Math.random()*100 + 'vw'; c.style.background = pick(cols); c.style.animationDelay = Math.random()*0.5 + 's';
+    c.style.animationDuration = 1.2 + Math.random()*1 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 2800); }
+}
+
+/* =====================================================================
+   CAR MODE (passive listening)
+   cadence → [note · pause · resolution] × N → cadence …
+   ===================================================================== */
+const Car = { running:false, token:null, wake:null };
+async function requestWake(){ try { if ('wakeLock' in navigator) Car.wake = await navigator.wakeLock.request('screen'); } catch(e){} }
+function carDegrees(){ return S.settings.car.degrees === 'all' ? ALL7 : LEVELS[Math.min(S.current, 5)].degrees; }
+async function carLoop(token){
+  const c = S.settings.car; let key = c.keyMode === 'random' ? randKey(-1) : c.keyMode === 'C' ? 0 : T.key;
+  let last = null, first = true;
+  while (!token.dead){
+    if (!first && c.keyMode === 'random') key = randKey(key);
+    first = false;
+    $('cKey').innerHTML = `<b>${KEYS[key].name}</b>`; $('cBig').textContent = '♪'; $('cStatus').textContent = 'Cadence';
+    await playCadence(key, token); if (token.dead) return;
+    await wait(700, token);
+    for (let i = 0; i < c.per && !token.dead; i++){
+      const degs = carDegrees(); const range = CAR_RANGES[c.range] || R1;
+      const lvl = Math.min(S.current, LEVELS.length-1);
+      const confs = topConfusionPairs(3, degs);
+      let label;
+      if (confs.length && Math.random() < 0.3){
+        const cp = confs[Math.floor(Math.random()*confs.length)];
+        label = last === cp.a && Math.random() < 0.7 ? cp.b : last === cp.b && Math.random() < 0.7 ? cp.a : (Math.random() < 0.5 ? cp.a : cp.b);
+      } else {
+        label = weightedPick(degs, degs.map(d => (S.levelDeg[lvl] && S.levelDeg[lvl][d] ? degWeight(d,lvl) : 1) * (d === last ? 0.3 : 1)));
+      }
+      const ps = positionsFor(label, range); const s = ps[Math.floor(Math.random()*ps.length)]; last = label;
+      $('cBig').textContent = '?'; $('cStatus').textContent = `Note ${i+1} of ${c.per}`;
+      await A.seq([ev(posMidi(s,key), 1.1, 0.85)], token); if (token.dead) return;
+      await wait(c.pause*1000, token); if (token.dead) return;
+      $('cBig').textContent = label;
+      await playResolution(s, key, token); if (token.dead) return;
+      await wait(c.gap*1000, token);
+    }
+  }
+}
+async function toggleCar(){
+  if (Car.running){ stopCar(); return; }
+  A.engage(); kill(T.token); A.stopAll(); T.phase = 'idle'; resetTrainIdle();
+  Car.running = true; $('cGo').textContent = 'Stop'; $('cGo').classList.add('stop');
+  await requestWake();
+  const token = Car.token = newToken();
+  try { await carLoop(token); } catch(e){ console.error(e); }
+  if (Car.token === token) stopCar();
+}
+function stopCar(){
+  Car.running = false; kill(Car.token); A.stopAll(); 
+  if (Car.wake){ Car.wake.release().catch(()=>{}); Car.wake = null; }
+  A.release(); $('cGo').textContent = 'Start'; $('cGo').classList.remove('stop'); $('cBig').textContent = '·'; $('cStatus').textContent = 'Stopped';
+}
+
+/* =====================================================================
+   UI: header, views, settings, progress
+   ===================================================================== */
+let activeView = 'train';
+function updateHeader(){
+  const L = LEVELS[S.current], m = masteryInfo(S.current);
+  $('hLvlNum').textContent = 'L' + (S.current+1); $('hLvlTitle').textContent = L.title;
+  $('hBar').style.width = (m.prog*100).toFixed(0) + '%';
+  const done = S.mastered[S.current] !== undefined;
+  $('hBarL').textContent = done ? 'Mastered: practicing' : m.n < m.W ? `Mastery: ${m.n}/${m.W} answers` : `Accuracy ${(m.acc*100).toFixed(0)}% (need ${(m.target*100)|0}%)`;
+  $('hBarR').textContent = done || m.n < m.W/2 ? '' : (!m.degOk ? 'needs work: ' + m.degs.filter(x=>!x.ok).map(x=>x.d).join(' ')
+    : (S.settings.showFeedback !== false && !m.speedOk && isFinite(m.med)) ? `speed ${(m.med/1000).toFixed(1)}s, goal ${m.limit.toFixed(1)}s` : '');
+  const td = S.days[today()] || 0;
+  $('hToday').textContent = td >= S.settings.dailyGoal ? `Today ${td} · goal ✓` : `Today ${td}/${S.settings.dailyGoal}`;
+}
+function showView(v){
+  activeView = v;
+  document.querySelectorAll('.view').forEach(x => x.classList.toggle('on', x.id === 'v-' + v));
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  if (v !== 'train' && T.phase !== 'idle'){ kill(T.token); A.stopAll(); T.phase = 'idle'; resetTrainIdle(); }
+  if (v === 'prog') renderProgress();
+  if (v === 'set') renderSettings();
+  if (v === 'car') renderCarOpts();
+  if (v !== 'car' && Car.running) stopCar();
+  // All screens share one scrolling area, so a long Settings page left it scrolled down; start each screen at the top.
+  const m = document.querySelector('main');
+  if (m){ m.style.overflowY = 'hidden'; m.scrollTop = 0;   // hiding the overflow also stops any scroll momentum still running
+    requestAnimationFrame(() => { m.scrollTop = 0; m.style.overflowY = ''; }); }
+}
+function resetTrainIdle(){
+  if (typeof SY !== 'undefined' && localChanged()) syncSoon();
+  setTimeout(applyUpdateIfIdle, 300);
+  T.q = null; T.ans = []; renderSlots(null); setChip(null); lockPad(true); renderPad(null);
+  setMsg('Ready', 'Tap Start to begin'); $('bGo').textContent = 'Start'; $('bGo').classList.remove('hidden');
+  $('bCompare').disabled = true; $('bGiveUp').disabled = true; T.cadKey = null; T.cadOct = null; T.sinceCad = 99;
+}
+function toast(t){ const el = $('toast'); el.textContent = t;
+  // sit just above the tab bar, clear of the Start button
+  const navTop = $('nav').getBoundingClientRect().top; el.style.top = 'auto'; el.style.bottom = Math.max(12, innerHeight - navTop + 10) + 'px'; el.classList.add('on'); clearTimeout(toast.id); toast.id = setTimeout(() => el.classList.remove('on'), 2200); }
+
+// Generic option rows
+function optSelect(id, label, sub, val, opts){
+  return `<div class="row"><div><div class="lab">${label}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>
+    <select data-opt="${id}">${opts.map(([v,t]) => `<option value="${v}" ${String(v)===String(val)?'selected':''}>${t}</option>`).join('')}</select></div>`;
+}
+function optToggle(id, label, sub, val){ return `<div class="row"><div><div class="lab">${label}</div>${sub?`<div class="sub">${sub}</div>`:''}</div><button class="toggle ${val?'on':''}" data-tog="${id}"></button></div>`; }
+function optStep(id, label, sub, val, min, max, step, unit){
+  return `<div class="row"><div><div class="lab">${label}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>
+    <div class="stepper" data-step="${id}" data-min="${min}" data-max="${max}" data-inc="${step}" data-unit="${unit||''}"><button data-d="-1">−</button><span>${val}${unit||''}</span><button data-d="1">+</button></div></div>`;
+}
+function getPath(p){ return p.split('.').reduce((o,k) => o[k], S.settings); }
+function setPath(p, v){ const ks = p.split('.'); let o = S.settings; while (ks.length > 1) o = o[ks.shift()]; o[ks[0]] = v; save(); }
+
+function renderCarOpts(){
+  const c = S.settings.car;
+  $('cOpts').innerHTML =
+    optStep('car.per','Notes between cadences','The cadence returns to remind you of the key', c.per, 1, 12, 1, '') +
+    optStep('car.pause','Think time','Pause before the answer', c.pause, 0.5, 6, 0.5, 's') +
+    optSelect('car.keyMode','Key','', c.keyMode, [['random','New each time'],['C','Stay in C'],['level','Same as training']]) +
+    optSelect('car.degrees','Notes','', c.degrees, [['level','Your current level’s'],['all','All seven']]) +
+    optSelect('car.range','Range','', c.range, [['one','One octave'],['two','Two octaves'],['three','Three octaves'],['four','Four octaves']]) +
+    optStep('car.gap','Gap after each note','', c.gap, 0.5, 5, 0.5, 's');
+}
+function renderSettings(){
+  const s = S.settings;
+  $('v-set').innerHTML = `
+    <h2>Training</h2><div class="card">
+      ${optStep('roundLen','Questions per round','Key and octave change together, and only between rounds (at least 10)', s.roundLen, 10, 30, 1, '')}
+      ${optSelect('cadenceType','Cadence style','Chords or tonic used to establish the key', s.cadenceType || 'I-IV-V-I', [['I-IV-V-I','I-IV-V-I'],['V7-I','V7-I'],['ii7-V7-I','ii7-V7-I'],['I','I'],['IM7','IM7'],['several tonics','several tonics'],['tonic','tonic']])}
+      ${optSelect('cadenceEvery','Cadence frequency','How often to replay the key (always on a key change)', s.cadenceEvery, [[1,'Every question'],[3,'Every 3 questions'],[5,'Every 5 questions'],[10,'Every 10 questions'],[0,'Only on key change']])}
+      ${optSelect('resStyle','Resolution style','How each note resolves back to the tonic', s.resStyle || 'nearest', [['nearest','Nearest tonic, stepwise'],['down','Always down to 1'],['up','Always up to 1↑'],['thirds','Skip by thirds'],['jump','Jump straight to tonic'],['tonicFirst','Tonic first, then walk']])}
+      ${optToggle('showFeedback','Response timing','Show response time and speed nudges on correct answers', s.showFeedback !== false)}
+      ${optSelect('speedLimit','Speed for mastery','Typical correct answer must be this quick, counted from the start of the tone', s.speedLimit, [[0,'Off'],[1,'1 second'],[1.5,'1.5 seconds'],[2,'2 seconds'],[3,'3 seconds'],[4,'4 seconds'],[6,'6 seconds']])}
+      ${optSelect('reviewPct','Review mix','Questions from earlier levels, for confidence', s.reviewPct, [[0,'None'],[10,'10%'],[20,'20%'],[30,'30%']])}
+      ${optSelect('cadenceTempo','Cadence speed','', s.cadenceTempo || 1, [[0.75,'Slow'],[1,'Normal'],[1.3,'Fast'],[1.65,'Very fast']])}
+      ${optSelect('noteTempo','Notes speed','', s.noteTempo || 1, [[0.75,'Slow'],[1,'Normal'],[1.3,'Fast'],[1.65,'Very fast']])}
+      ${optSelect('resTempo','Resolution speed','', s.resTempo || 1, [[0.75,'Slow'],[1,'Normal'],[1.3,'Fast'],[1.65,'Very fast']])}
+      ${optToggle('autoNext','Auto-advance','Go to the next question after the resolution', s.autoNext)}
+      ${optSelect('dailyGoal','Daily goal','', s.dailyGoal, [[30,'30 answers'],[60,'60 answers'],[100,'100 answers'],[150,'150 answers']])}
+      ${optSelect('breakEvery','Break reminder','Short sessions help you learn more than long ones', s.breakEvery, [[0,'Off'],[5,'After 5 minutes'],[10,'After 10 minutes'],[15,'After 15 minutes'],[20,'After 20 minutes']])}
+    </div>
+    <h2>Keyboard</h2><div class="card">
+      ${optSelect('answerWith','Answer with','Also the 123 / Keys button on the training screen. On the keyboard, any octave counts', s.answerWith || 'level', [['level','As each level says'],['pad','Number pad'],['piano','Keyboard']])}
+      ${optToggle('labelKeys','Note names on keys','Turn off once you know the keyboard', s.labelKeys)}
+      ${optToggle('markTonic','Mark the tonic','Dot on the key’s home note', s.markTonic)}
+    </div>
+    <h2>Voice (experiment)</h2><div class="card">
+      ${optToggle('voiceOn','Answer by voice','Say the number instead of tapping (number-pad questions only)', s.voiceOn)}
+      <div class="row"><div><div class="lab">Note loudness with voice</div><div class="sub" id="vBoostTxt">${(s.voiceBoost || 1.5).toFixed(1)}× · the phone plays quieter while the mic is on</div></div><input type="range" min="1" max="4" step="0.1" value="${s.voiceBoost || 1.5}" id="voiceBoostRange"></div>
+      <div class="row"><div><div class="lab">Voice delay allowance</div><div class="sub" id="vLagTxt">${(s.voiceLag ?? 1.3).toFixed(1)} s · taken off the time when Safari doesn't say when you began speaking</div></div><input type="range" min="0" max="3" step="0.1" value="${s.voiceLag ?? 1.3}" id="voiceLagRange"></div>
+      <div class="row"><div><div class="lab">Measure the delay</div><div class="sub">Three rounds: tap the button and say “one” at the same moment</div></div><button class="tool" id="vCal">Measure</button></div>
+      <div class="row"><div><div class="lab">Voice log</div><div class="sub">What the microphone heard recently, and what the app did with it</div></div><button class="tool" id="vLogBtn">Show</button></div>
+      <div class="sub hidden" id="vLogOut" style="white-space:pre-wrap;font-size:12px;padding:6px 2px;line-height:1.5"></div>
+      <div class="row"><button class="tool hidden" id="vCalTap" style="width:100%;padding:18px">Tap here while saying “one”</button></div>
+      <div class="row"><div><div class="lab">Match volume</div><div class="sub">Plays a chord with the mic off, then on. Slide until they sound the same, then press again</div></div><button class="tool" id="vMatch">Match</button></div>
+      <div class="row"><div><div class="lab">Test voice</div><div class="sub" id="vStatus">Tap Test, then say a number from 1 to 7</div></div><button class="tool" id="vTest">Test</button></div>
+    </div>
+    <h2>Sound</h2><div class="card">
+      ${optToggle('errorSound','Error sound','On a wrong answer: a short low tone, a pause, then the correct note and its resolution', s.errorSound !== false)}
+      <div class="row"><div class="lab">Volume</div><input type="range" min="0.2" max="1.2" step="0.05" value="${s.volume}" id="volRange"></div>
+      <div class="row"><div><div class="lab">Piano</div><div class="sub">${A.synth ? 'Samples unavailable: using a simple synth' : 'Salamander Grand Piano by Alexander Holm (CC BY 3.0)'}</div></div></div>
+    </div>
+    <h2>Levels</h2><div class="card">
+      ${optSelect('_skip','Skip ahead','If you already know earlier material', S.unlocked, LEVELS.map((L,i) => [i, `Unlock through L${i+1}`]))}
+      <div class="row"><div><div class="lab">Undo skipping</div><div class="sub">Levels you skipped (not earned) go back to unmastered, and levels above your highest earned one lock again. Your stats are kept.</div></div><button class="tool" id="bUnskip">Undo</button></div>
+    </div>
+    <h2>Sync across devices</h2><div class="card">${syncCardHTML()}</div>
+    <h2>Your data</h2><div class="card">
+      <div class="row"><div><div class="lab">Export progress</div><div class="sub">${S.lastBackup ? 'Last backup ' + S.lastBackup : 'No backup yet'} · reminder weekly</div></div><button class="tool" style="flex:none;padding:8px 14px" id="bExport">Export</button></div>
+      <div class="row"><div><div class="lab">Import progress</div><div class="sub">Restore from a backup file</div></div><label class="tool" style="flex:none;padding:8px 14px">Import<input type="file" accept="application/json,.json" id="fImport" hidden></label></div>
+      <div class="row"><div><div class="lab" style="color:var(--bad)">Reset everything</div></div><button class="tool" style="flex:none;padding:8px 14px;color:var(--bad)" id="bReset">Reset</button></div>
+    </div>
+    <p class="note">${SY.token ? 'Progress is saved on this device and synced to a private gist in your GitHub account.' : 'Progress is saved on this device. Export now and then so it isn’t lost if Safari clears website data.'}</p>
+    <p class="note" style="text-align:center;color:var(--faint)">Version ${APP_VERSION}</p>`;
+}
+function renderProgress(){
+  const m = masteryInfo(S.current);
+  let lv = '';
+  LEVELS.forEach((L,i) => {
+    const done = S.mastered[i] !== undefined, cur = i === S.current, locked = i > S.unlocked;
+    const info = !locked && !done ? masteryInfo(i) : null;
+    lv += `<div class="lv ${done?'done':''} ${cur?'cur':''} ${locked?'locked':''}">
+      <div class="n">${done ? '✓' : i+1}</div>
+      <div class="t"><b>${L.title}</b><div>${L.desc}${info && info.n ? ` · ${(info.acc*100).toFixed(0)}% of last ${info.n}` : ''}</div></div>
+      ${!locked && !cur ? `<button class="act" data-lv="${i}">Practice</button>` : cur ? '<span class="act" style="color:var(--dim)">Now</span>' : ''}</div>`;
+  });
+  COMING.forEach(t => { lv += `<div class="lv locked"><div class="n">·</div><div class="t"><b>${t}</b><div>Coming later</div></div></div>`; });
+  let bars = '';
+  ALL7.forEach(d => { const st = S.deg[d]; const a = st ? accOf(st.r.slice(-20)) : null;
+    const tm = st && st.t.length ? (st.t.slice().sort((x,y)=>x-y)[Math.floor(st.t.length/2)]/1000).toFixed(1)+'s' : '–';
+    bars += `<div class="d">${d}</div><div class="b"><i style="width:${a===null?0:a*100}%;background:${a===null?'':a>=.9?'var(--good)':a>=.7?'var(--accent)':'var(--bad)'}"></i></div><div class="p">${a===null?'–':(a*100).toFixed(0)+'%'}</div><div class="tm">${tm}</div>`; });
+  const confs = topConfusionPairs(6);
+  $('v-prog').innerHTML = `
+    <div class="stats" style="margin-top:6px">
+      <div class="stat"><b>${dayStreak()}</b><span>Day streak</span></div>
+      <div class="stat"><b>${S.total}</b><span>Answered</span></div>
+      <div class="stat"><b>${S.bestStreak}</b><span>Best run</span></div>
+    </div>
+    <h2>Trouble spots</h2><div class="card">${confs.length ? confs.map(c => `<div class="row"><div class="lab">You mix up <b>${c.a}</b> and <b>${c.b}</b></div><div class="sub">${c.v.toFixed(1)}× recently</div></div>`).join('')
+      : '<div class="row"><div class="sub">No repeated mix-ups yet. When you confuse two degrees, they’ll show here and get drilled more often.</div></div>'}</div>
+    <h2>Scale degrees · last 20 · typical speed</h2><div class="card"><div class="degbars">${bars}</div></div>
+    <h2>Levels</h2><div class="card">${lv}</div>
+    <p class="note">To master a level: ${m.W} recent answers at ${(m.target*100)|0}% or better, every degree at least 75% recently${S.settings.speedLimit ? `, and a typical correct answer under ${m.limit.toFixed(1)}s` : ''}.</p>`;
+}
+
+/* =====================================================================
+   EVENTS
+   ===================================================================== */
+$('nav').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showView(b.dataset.v); });
+$('bGo').addEventListener('click', () => { A.engage(); nextQuestion(); });
+function auxToken(){ kill(T.aux); A.stopAll(); return T.aux = newToken(); }
+$('bReplay').addEventListener('click', async () => {
+  if (!T.q || T.phase === 'playing' || T.phase === 'idle') return;
+  await playQuestionNotes(T.q, auxToken());
+});
+$('bCadence').addEventListener('click', async () => {
+  if (T.phase === 'playing') return;
+  const k = T.q ? T.q.key : (LEVELS[S.current].keyMode === 'C' ? 0 : T.key);
+  const token = auxToken();
+  await playCadence(k, token, T.q ? T.q.oct : 0); if (token.dead) return;
+  if (T.q && T.phase === 'answering'){ await wait(300, token); if (!token.dead) await playQuestionNotes(T.q, token); }
+});
+$('bGiveUp').addEventListener('click', giveUp);
+$('bCompare').addEventListener('click', compare);
+$('bInput').addEventListener('click', toggleInput);
+$('bStop').addEventListener('click', () => { kill(T.token); kill(T.aux); A.stopAll(); T.phase = 'idle'; resetTrainIdle(); updateHeader(); toast('Stopped. Progress is saved.'); goToStartScreen(); });
+$('tPad').addEventListener('pointerdown', e => { const b = e.target.closest('.deg'); if (!b) return; e.preventDefault(); T.tapped = b; onAnswer({ label: b.dataset.d }); });
+$('tPiano').addEventListener('pointerdown', e => {
+  const k = e.target.closest('[data-m]'); if (!k) return; e.preventDefault();
+  const m = +k.dataset.m; A.note(m, A.now()+0.01, 0.8, 0.85);
+  k.classList.add('down'); setTimeout(() => k.classList.remove('down'), 180);
+  onAnswer({ midi: m });
+});
+$('cGo').addEventListener('click', toggleCar);
+$('bLvlOk').addEventListener('click', () => { $('lvlOv').classList.add('hidden'); T.cadKey = null; T.roundKey = null; renderPad(null); nextQuestion(); });
+
+document.addEventListener('change', e => {
+  const sel = e.target.closest('select[data-opt]');
+  if (sel){
+    const id = sel.dataset.opt, raw = sel.value;
+    if (id === '_skip'){ const n = +raw; if (n > S.unlocked){ for (let i=0;i<n;i++) if (S.mastered[i] === undefined) S.mastered[i] = 'skipped';
+        S.unlocked = n; S.current = n; save(); updateHeader(); toast(`Unlocked through L${n+1}`); } else sel.value = S.unlocked; return; }
+    const v = isNaN(+raw) ? raw : +raw; setPath(id, v); updateHeader(); if (id === 'answerWith' && !(T.q && T.phase !== 'idle')) renderPad(null); return;
+  }
+  if (e.target.id === 'fImport'){
+    const f = e.target.files[0]; if (!f) return;
+    f.text().then(t => { const d = JSON.parse(t); if (!d || d.v !== 1) throw 0; localStorage.setItem(STORE, t); S = load(); save(); syncSoon(); updateHeader(); renderSettings(); toast('Progress restored'); })
+     .catch(() => toast('That file could not be read'));
+  }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'voiceLagRange'){ S.settings.voiceLag = +e.target.value; $('vLagTxt').textContent = S.settings.voiceLag.toFixed(1) + " s · taken off the time when Safari doesn't say when you began speaking"; save(); }
+  if (e.target.id === 'voiceBoostRange'){ S.settings.voiceBoost = +e.target.value; $('vBoostTxt').textContent = S.settings.voiceBoost.toFixed(1) + '× · the phone plays quieter while the mic is on'; if (A.master) A.master.gain.value = masterGain(); save(); }
+  if (e.target.id === 'volRange'){ S.settings.volume = +e.target.value; if (A.master) A.master.gain.value = masterGain(); save(); } });
+document.addEventListener('click', e => {
+  const tg = e.target.closest('[data-tog]');
+  if (tg){ const id = tg.dataset.tog;
+    setPath(id, !getPath(id));
+    if (id === 'voiceOn'){ try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} if (A.master) A.master.gain.value = masterGain(); if (!getPath(id)) voiceStop(); }
+    if (id === 'showFeedback') updateHeader();
+    tg.classList.toggle('on'); return; }
+  const sb = e.target.closest('.stepper button');
+  if (sb){ const st = sb.parentElement, id = st.dataset.step, inc = +st.dataset.inc, unit = st.dataset.unit;
+    const v = Math.min(+st.dataset.max, Math.max(+st.dataset.min, Math.round((getPath(id) + inc*(+sb.dataset.d))*100)/100));
+    setPath(id, v); st.querySelector('span').textContent = v + unit; return; }
+  const lb = e.target.closest('[data-lv]');
+  if (lb){ S.current = +lb.dataset.lv; save(); updateHeader(); T.cadKey = null; showView('train'); toast(`Practicing L${S.current+1}`); return; }
+  if (e.target.id === 'bSyncConnect'){ const v = $('gTok').value.trim(); if (v) syncConnect(v); return; }
+  if (e.target.id === 'bSyncNow'){ syncNow(); return; }
+  if (e.target.id === 'bSyncOff'){ if (confirm('Stop syncing on this device? Your gist on GitHub is kept.')){ SY = {}; saveSync(); renderSettings(); toast('Sync is off on this device'); } return; }
+  if (e.target.id === 'bUnskip'){
+    const sk = Object.keys(S.mastered).filter(k => S.mastered[k] === 'skipped');
+    if (!sk.length){ toast('No skipped levels'); return; }
+    if (!confirm('Mark the skipped levels as not yet mastered and lock the levels above your highest earned one? Your stats are kept.')) return;
+    sk.forEach(k => delete S.mastered[k]);
+    const earned = Object.keys(S.mastered).map(Number);
+    S.unlocked = earned.length ? Math.min(LEVELS.length-1, Math.max(...earned) + 1) : 0;
+    S.current = Math.min(S.current, S.unlocked);
+    save(); updateHeader(); renderSettings(); resetTrainIdle(); toast(`Back to level ${S.current+1}`); return;
+  }
+  if (e.target.id === 'bExport'){ exportProgress().then(() => renderSettings()); return; }
+  if (e.target.id === 'bReset'){ if (confirm('Erase all progress and settings?')){ S = freshState(); save(); updateHeader(); renderSettings(); resetTrainIdle(); toast('Reset'); } }
+});
+
+/* =====================================================================
+   SYNC via a private GitHub gist
+   The token lives only in this device's storage (never in progress files or exports).
+   ===================================================================== */
+const SYNC_KEY = 'music.ear.sync', GIST_FILE = 'ear-trainer-progress.json';
+const TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=gist&description=Ear%20Trainer%20sync';
+let SY = (() => { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch(e){ return {}; } })();
+function saveSync(){ try { localStorage.setItem(SYNC_KEY, JSON.stringify(SY)); } catch(e){} }
+const localChanged = () => !!SY.token && (S.updatedAt || 0) > (SY.lastLocal || 0);
+function deviceName(){ const u = navigator.userAgent;
+  return /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? (navigator.maxTouchPoints > 1 ? 'iPad' : 'Mac') : /Windows/.test(u) ? 'PC' : 'another device'; }
+function ago(t){ if (!t) return 'never'; const m = Math.round((Date.now() - t)/60000);
+  return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m/60) + ' h ago' : Math.round(m/1440) + ' days ago'; }
+async function gh(path, opts={}){
+  const headers = { 'Accept':'application/vnd.github+json', 'Authorization':'Bearer ' + SY.token };
+  if (opts.body) headers['Content-Type'] = 'application/json';
+  const r = await fetch('https://api.github.com' + path, { method: opts.method || 'GET', body: opts.body, headers, cache:'no-store', keepalive: !!opts.keepalive });
+  if (!r.ok){ const e = new Error('GitHub ' + r.status); e.status = r.status; throw e; }
+  return r.json();
+}
+function syncErr(e){
+  if (!SY.token) return;
+  SY.err = e && e.status === 401 ? 'GitHub no longer accepts the token. Paste a new one.' : e && e.status === 403 ? 'GitHub refused (token may lack the gist permission).' : 'Couldn’t reach GitHub. Will retry.';
+  saveSync(); if (activeView === 'set') renderSettings();
+}
+let syncBusy = false, syncTimer = null;
+// Always check GitHub before writing, so newer progress from another device is never overwritten.
+function syncSoon(){ clearTimeout(syncTimer); syncTimer = setTimeout(() => syncPull().catch(syncErr), 800); }
+async function syncPush(opts={}){
+  if (!SY.token || syncBusy && !opts.keepalive) return;
+  syncBusy = true;
+  try {
+    if (!S.updatedAt) S.updatedAt = Date.now(), saveRaw();
+    const stamp = S.updatedAt;
+    const body = { files: { [GIST_FILE]: { content: JSON.stringify({ v:1, updatedAt: stamp, device: deviceName(), state: S }) } } };
+    if (!SY.gistId){
+      body.description = 'Ear Trainer progress (autodax.github.io/ear/)'; body.public = false;
+      const g = await gh('/gists', { method:'POST', body: JSON.stringify(body) }); SY.gistId = g.id;
+    } else await gh('/gists/' + SY.gistId, { method:'PATCH', body: JSON.stringify(body), keepalive: opts.keepalive });
+    SY.lastLocal = SY.lastRemote = stamp; SY.lastSyncAt = Date.now(); SY.err = null; SY.sincePush = 0; saveSync();
+    if (activeView === 'set') renderSettings();
+  } finally { syncBusy = false; }
+}
+let pullBusy = false;
+async function syncPull(opts={}){
+  if (!SY.token || syncBusy || pullBusy) return;
+  pullBusy = true;
+  try { return await syncPullInner(opts); } finally { pullBusy = false; }
+}
+async function syncPullInner(opts){
+  if (!SY.gistId) return syncPush();
+  let g;
+  try { g = await gh('/gists/' + SY.gistId); }
+  catch(e){ if (e.status === 404){ SY.gistId = null; saveSync(); return syncPush(); } throw e; }
+  const f = g.files && g.files[GIST_FILE]; if (!f) return syncPush();
+  let text = f.content; if (f.truncated) text = await (await fetch(f.raw_url, {cache:'no-store'})).text();
+  const remote = JSON.parse(text);
+  const remoteNew = remote.updatedAt && remote.updatedAt !== S.updatedAt && remote.updatedAt > (SY.lastRemote || 0);
+  if (opts.first){
+    if (!S.total) return adopt(remote);
+    if (!remote.state || !remote.state.total || remote.updatedAt === S.updatedAt) return syncPush();
+    return askWhich(remote);
+  }
+  if (remoteNew && !localChanged()) return adopt(remote);
+  if (remoteNew && localChanged()) return askWhich(remote);
+  if (localChanged()) return syncPush();
+  SY.lastSyncAt = Date.now(); SY.err = null; saveSync(); if (activeView === 'set') renderSettings();
+}
+function adopt(remote){
+  S = normalize(remote.state); S.updatedAt = remote.updatedAt; saveRaw();
+  SY.lastLocal = SY.lastRemote = remote.updatedAt; SY.lastSyncAt = Date.now(); SY.err = null; saveSync();
+  updateHeader(); if (T.phase === 'idle') resetTrainIdle();
+  if (activeView === 'set') renderSettings(); if (activeView === 'prog') renderProgress();
+  toast('Progress loaded from ' + (remote.device && remote.device !== 'another device' ? 'your ' + remote.device : 'your other device'));
+}
+function askWhich(remote){
+  if (!$('modal').classList.contains('hidden')) return;
+  const r = remote.state || {}, desc = (st, t) => `L${(st.current||0)+1}, ${st.total||0} answers, saved ${ago(t)}`;
+  modal({ icon:'🔄', title:'Which progress should I keep?',
+    text: `Progress changed on this ${deviceName()} and on your ${remote.device || 'other device'}.<br><br><b>This ${deviceName()}:</b> ${desc(S, S.updatedAt)}<br><b>${remote.device || 'Other device'}:</b> ${desc(r, remote.updatedAt)}`,
+    buttons: [ { label: `Keep this ${deviceName()}’s`, fn: () => { S.updatedAt = Date.now(); saveRaw(); syncPush().then(() => toast('Synced')).catch(syncErr); } },
+               { label: `Use the ${remote.device || 'other device'}’s`, ghost: true, fn: () => adopt(remote) } ] });
+}
+async function syncConnect(token){
+  SY = { token };
+  toast('Connecting to GitHub…');
+  try {
+    let id = null;
+    for (let page = 1; page <= 5 && !id; page++){
+      const list = await gh(`/gists?per_page=100&page=${page}`); if (!list.length) break;
+      const hit = list.find(x => x.files && x.files[GIST_FILE]); if (hit) id = hit.id;
+    }
+    SY.gistId = id; saveSync();
+    if (id) await syncPull({ first: true }); else await syncPush();
+    toast('Sync is on');
+  } catch(e){
+    SY = {}; saveSync();
+    toast(e.status === 401 ? 'GitHub didn’t accept that token' : e.status === 403 ? 'That token doesn’t have the gist permission' : 'Couldn’t reach GitHub');
+  }
+  renderSettings();
+}
+async function syncNow(){ try { await syncPull(); toast('Synced'); } catch(e){ syncErr(e); toast('Sync failed'); } }
+function syncCardHTML(){
+  if (!SY.token) return `
+    <div class="row"><div class="sub" style="font-size:13px;line-height:1.45">Keep your progress in a private gist in your GitHub account so every device stays in step.
+      <a class="lnk" href="${TOKEN_URL}" target="_blank" rel="noopener">Create a token</a> (the gist box is already ticked), copy it, and paste it here. Do this once on each device.</div></div>
+    <div class="row"><input class="tok" id="gTok" type="password" placeholder="Paste GitHub token" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button class="tool" style="flex:none;padding:8px 14px" id="bSyncConnect">Connect</button></div>`;
+  return `
+    <div class="row"><div><div class="lab">Sync is on</div><div class="sub">${SY.err ? '<span style="color:var(--bad)">' + SY.err + '</span>' : 'Last synced ' + ago(SY.lastSyncAt)}</div></div>
+      <button class="tool" style="flex:none;padding:8px 14px" id="bSyncNow">Sync now</button></div>
+    <div class="row"><div class="sub">Turn off on this device (keeps the gist)</div><button class="tool" style="flex:none;padding:8px 14px" id="bSyncOff">Turn off</button></div>`;
+}
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+A.prefetch(p => { $('loadBar').style.width = (p*100).toFixed(0) + "%"; })
+ .then(failed => { $('loadTxt').textContent = failed > SAMPLE_LIST.length*0.4 ? 'Piano samples unavailable (offline?). A simple synth will play.' : 'Piano ready'; });
+$('bBegin').addEventListener('click', async () => {
+  if (A.released){   // coming back from the stop screen
+    A.engage(); $('startOv').classList.add('hidden'); syncPull().catch(syncErr); return;
+  }
+  $('bBegin').disabled = true; $('loadTxt').textContent = 'Starting audio…';
+  unlockIOS();
+  await A.start();
+  A.decodeAll();
+  $('startOv').classList.add('hidden');
+  syncPull().catch(syncErr);
+  if (backupDue()) modal({ icon:'💾', title:'Back up your progress?',
+    text:`${S.lastBackup ? 'Your last backup was ' + daysBetween(S.lastBackup, today()) + ' days ago.' : 'You haven’t backed up yet.'} Save a copy to Files or iCloud Drive so it can’t be lost.`,
+    buttons:[{label:'Back up now', fn: () => exportProgress()}, {label:'Later', ghost:true, fn: snoozeBackup}] });
+  A.fetching.then(failed => { if (failed > SAMPLE_LIST.length*0.4) toast('Piano samples could not load, so a simple synth is playing instead'); });
+});
+// Stop, "Done for today" and "Take a break": let go of the audio channel and go back to the start screen.
+/* ===== VOICE ANSWERS (experiment) =====================================================
+   Say a scale number instead of tapping. Easy to remove: delete this block, the "Voice" card in renderSettings,
+   and the three hook lines marked VOICE (nextQuestion, grade, goToStartScreen). */
+const VOICE = { rec:null, on:false, fails:0, mic:null, ready:null, stopP:null, first:{}, used:-1, usedCount:{}, pending:null, log:[] };
+// A short log of what the recognizer heard (Settings → Voice → Voice log), to find out why an answer was or wasn't taken.
+function voiceLogAdd(k, text, fin, action){
+  const last = VOICE.log[VOICE.log.length-1];
+  if (last && last.k === k && last.text === text && last.action === action) return;
+  VOICE.log.push({ t: Date.now(), k, text, fin: !!fin, action }); if (VOICE.log.length > 40) VOICE.log.shift();
+}
+const VOICE_WORDS = { one:1, won:1, '1':1, two:2, to:2, too:2, '2':2, three:3, tree:3, '3':3, four:4, for:4, fore:4, '4':4, five:5, '5':5, six:6, '6':6, seven:7, '7':7 };
+const voiceSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+function voiceParseAll(text){
+  const out = [];
+  for (const w of String(text || '').toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/)){
+    if (VOICE_WORDS[w]) out.push(VOICE_WORDS[w]);
+  }
+  return out;
+}
+function voiceParse(alts){
+  for (const t of alts){ const nums = voiceParseAll(t); if (nums.length) return nums[0]; }
+  return 0;
+}
+function clearVoicePending(){ if (VOICE.pending){ clearTimeout(VOICE.pending.timer); VOICE.pending = null; } }
+function voiceMic(on){
+  if (!VOICE.mic){ const m = document.createElement('span'); m.className = 'chip'; m.textContent = '🎤'; m.style.display = 'none'; $('bInput').before(m); VOICE.mic = m; }
+  VOICE.mic.style.display = on ? '' : 'none';
+}
+function voiceStart(onNumber, onStatus){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR){ onStatus && onStatus('This browser has no speech recognition.'); return false; }
+  voiceStop();
+  try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch(e){}
+  const rec = VOICE.rec = new SR(); VOICE.on = true;
+  VOICE.ready = new Promise(res => { let d = false; const fin = () => { if (!d){ d = true; res(); } };
+    rec.onaudiostart = fin; setTimeout(fin, 2500); VOICE.readyFin = fin; });
+  rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 4;
+  rec.onspeechstart = () => { VOICE.speechAt = performance.now(); };
+  rec.onstart = () => { VOICE.first = {}; VOICE.used = -1; VOICE.usedCount = {}; clearVoicePending(); };   // result numbers start again from 0 in each listening session
+  rec.onresult = e => {
+    VOICE.fails = 0;
+    // Only the top guess of each result counts (lower-ranked guesses led to wrong numbers).
+    for (let k = e.resultIndex || 0; k < e.results.length; k++){
+      const r = e.results[k], top = (r[0] && r[0].transcript || '').trim(), nums = voiceParseAll(top), n = nums[0] || 0, now = performance.now();
+      if (!VOICE.first) VOICE.first = {};
+      if (VOICE.first[k] === undefined) VOICE.first[k] = now;
+      onStatus && onStatus(n ? `Heard “${top}” → ${nums.join(' ')}` : `Heard “${top}” (no number in it)`);
+      if (nums.length) onNumber(n, { k, nums, first: VOICE.first[k], final: r.isFinal, text: top });
+      else voiceLogAdd(k, top, r.isFinal, 'no number');
+    }
+  };
+  rec.onerror = e => {
+    VOICE.readyFin && VOICE.readyFin();
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed'){ VOICE.on = false; VOICE.fails = 99; onStatus && onStatus('Speech or microphone permission was refused, so voice answers cannot work here.'); }
+    else if (e.error === 'audio-capture'){ VOICE.on = false; VOICE.fails = 99; onStatus && onStatus('No microphone could be used.'); }
+    else if (e.error !== 'no-speech' && e.error !== 'aborted'){ VOICE.fails++; onStatus && onStatus(`Voice error: ${e.error}`); }
+  };
+  rec.onend = () => { if (VOICE.rec === rec && VOICE.on && VOICE.fails < 4) setTimeout(() => { try { if (VOICE.rec === rec && VOICE.on) rec.start(); } catch(e){} }, 250); else if (VOICE.rec === rec) voiceMic(false); };
+  try { rec.start(); voiceMic(true); } catch(e){ VOICE.on = false; onStatus && onStatus('Could not start listening.'); return false; }
+  return true;
+}
+// Stopping also takes a moment while iOS switches the audio back; voiceSettled() lets the app wait for that.
+function voiceStop(){
+  VOICE.on = false; clearVoicePending(); const r = VOICE.rec; VOICE.rec = null; voiceMic(false);
+  if (r){
+    VOICE.stopP = new Promise(res => { let d = false; const fin = () => { if (!d){ d = true; setTimeout(res, 350); } };
+      r.onend = fin; r.onerror = fin; r.onresult = null; setTimeout(fin, 900); });
+    try { r.abort(); } catch(e){}
+  }
+  return VOICE.stopP || Promise.resolve();
+}
+const voiceSettled = () => VOICE.stopP || Promise.resolve();
+// During a question: listen only when voice is on and the question is answered with the number pad.
+function voiceListen(){
+  if (!S.settings.voiceOn){ voiceStop(); return null; }   // the mic stays on from the first question until you stop
+  if (VOICE.on && VOICE.rec) return;
+  VOICE.fails = 0;
+  const commitVoice = (info, nums) => {
+    clearVoicePending();
+    const lagMs = (S.settings.voiceLag ?? 1.3) * 1000, log = a => voiceLogAdd(info.k, info.text, info.final, a);
+    if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers'){ log('ignored (not waiting for an answer)'); return; }
+    if (info.first - lagMs < (T.voiceOpen || 0) - 300){ log('ignored (spoken before this question)'); return; }
+    const already = VOICE.usedCount[info.k] || 0;
+    const fresh = nums.slice(already);
+    if (!fresh.length){ log('ignored (final of what it already answered)'); return; }
+    const valid = fresh.filter(d => document.querySelector(`#tPad .deg[data-d="${d}"]:not(.off)`));
+    if (!valid.length){ log(`ignored (${fresh.join(' ')} not on this level)`); return; }
+    const take = valid.slice(0, Math.max(1, T.q.len - T.ans.length));
+    VOICE.usedCount[info.k] = already + take.length;
+    if (T.q.len === 1) VOICE.used = info.k;
+    log(`ANSWERED ${take.join(' ')}`);
+    const now = performance.now(), seen = !!(VOICE.speechAt && VOICE.speechAt >= T.voiceOpen - 50 && VOICE.speechAt <= now);
+    const at = seen ? VOICE.speechAt : now - lagMs; VOICE.speechAt = 0;
+    for (const d of take){
+      if (T.phase !== 'answering') break;
+      T.tapped = document.querySelector(`#tPad .deg[data-d="${d}"]:not(.off)`);
+      onAnswer({ label: String(d), at });
+    }
+  };
+  const ok = voiceStart((n, info) => {
+    const log = a => voiceLogAdd(info.k, info.text, info.final, a);
+    if (T.q && T.q.len === 1 && info.k <= VOICE.used){ log('ignored (final of what it already answered)'); return; }
+    if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers'){ clearVoicePending(); log('ignored (not waiting for an answer)'); return; }
+    const nums = info.nums || [n];
+    // Final results commit right away; interim guesses hold for 140 ms so fleeting phantom flips self-correct first.
+    if (info.final){ commitVoice(info, nums); return; }
+    const sig = info.k + ':' + nums.join(',');
+    if (VOICE.pending && VOICE.pending.sig === sig) return;
+    clearVoicePending();
+    VOICE.pending = { sig, timer: setTimeout(() => commitVoice(info, nums), 140) };
+  }, msg => { if (/refused|No microphone/.test(msg)){ S.settings.voiceOn = false; save(); toast(msg); } });
+  return ok ? VOICE.ready : null;
+}
+function voiceTest(){
+  const st = $('vStatus'); const say = t => { if (st) st.textContent = t; };
+  if (!voiceSupported()){ say('This browser has no speech recognition, so voice answers are not possible here.'); return; }
+  say('Listening… say a number from 1 to 7.');
+  voiceStart(n => { voiceStop(); }, msg => { say(msg); if (/Heard/.test(msg)) voiceStop(); });
+  setTimeout(() => { if (st && /Listening/.test(st.textContent)){ say('Nothing heard yet. If a permission prompt appeared, allow it and try again.'); } }, 8000);
+}
+// Measures how long Safari takes to recognize a spoken number: you tap and say "one" at the same moment, three times.
+let VCAL = null;
+function voiceCalibrate(){
+  const st = $('vStatus'), say = t => { if (st) st.textContent = t; }, btn = $('vCal'), tap = $('vCalTap');
+  const done = () => { VCAL = null; voiceStop(); btn.textContent = 'Measure'; tap.classList.add('hidden'); };
+  if (VCAL){ done(); say('Stopped.'); return; }
+  if (!voiceSupported()){ say('This browser has no speech recognition.'); return; }
+  const lags = []; VCAL = { tapAt: 0, timer: null }; btn.textContent = 'Cancel'; say('Starting the microphone…');
+  const ok = voiceStart(n => {
+    if (!VCAL || !VCAL.tapAt) return;
+    clearTimeout(VCAL.timer); lags.push(performance.now() - VCAL.tapAt); VCAL.tapAt = 0;
+    if (lags.length < 3){ say(`Heard it (${(lags[lags.length-1]/1000).toFixed(1)} s). Round ${lags.length + 1} of 3: tap and say “one”.`); return; }
+    const avg = lags.reduce((a,b) => a + b, 0) / lags.length / 1000, v = Math.min(3, Math.max(0, Math.round(avg * 10) / 10));
+    S.settings.voiceLag = v; save(); const r = $('voiceLagRange'); if (r) r.value = v; const t = $('vLagTxt'); if (t) t.textContent = v.toFixed(1) + " s · taken off the time when Safari doesn't say when you began speaking";
+    done(); say(`Measured ${lags.map(x => (x/1000).toFixed(1)).join(', ')} s. Voice delay allowance set to ${v.toFixed(1)} s.`);
+  }, msg => { if (/refused|No microphone|Could not/.test(msg)){ done(); say(msg); } });
+  if (!ok){ done(); return; }
+  VOICE.ready.then(() => { if (!VCAL) return; tap.classList.remove('hidden'); say('Round 1 of 3: tap the button below and say “one” at the same moment.'); });
+  tap.onpointerdown = () => { if (!VCAL) return; VCAL.tapAt = performance.now(); say('Listening…'); clearTimeout(VCAL.timer);
+    VCAL.timer = setTimeout(() => { if (VCAL){ VCAL.tapAt = 0; say('Nothing recognized. Tap and say “one” again.'); } }, 6000); };
+}
+// Plays one chord with the mic off, then the same chord with the mic on at the boosted loudness, so the two can be compared by ear.
+let voiceMatching = false;
+async function voiceMatch(){
+  if (voiceMatching) return; voiceMatching = true;
+  const st = $('vStatus'), say = t => { if (st) st.textContent = t; }, token = newToken();
+  const chord = [ev([60,64,67], 1.2, 0.8)], boost = S.settings.voiceBoost || 1.5;
+  try {
+    voiceStop(); await voiceSettled();
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
+    A.engage(); if (A.master) A.master.gain.value = S.settings.volume;
+    say('1 of 2: mic OFF…'); await A.seq(chord, token); await wait(900, token);
+    say('2 of 2: mic ON…');
+    const ok = voiceStart(() => {}, null);
+    if (ok){ await VOICE.ready; await wait(700, token); }
+    if (A.master) A.master.gain.value = S.settings.volume * boost;
+    await A.seq(chord, token); await wait(400, token);
+    say(ok ? 'Done. If the second was quieter, slide up; if louder, slide down. Then press Match again.' : 'The microphone could not start, so there is nothing to compare.');
+  } finally { voiceStop(); await voiceSettled(); try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} if (A.master) A.master.gain.value = masterGain(); voiceMatching = false; }
+}
+document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest(); if (e.target.id === 'vMatch') voiceMatch(); if (e.target.id === 'vCal') voiceCalibrate();
+  if (e.target.id === 'vLogBtn'){ const o = $('vLogOut'); o.classList.remove('hidden'); const f = d => { const x = new Date(d); return String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')+':'+String(x.getSeconds()).padStart(2,'0'); };
+    o.textContent = VOICE.log.length ? VOICE.log.slice(-14).map(l => `${f(l.t)}  “${l.text}”${l.fin ? '' : ' …'}  ${l.action}`).join('\n') : 'Nothing heard yet. Turn on Answer by voice and practice a few questions.'; } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) voiceStop(); else if (T.phase === 'answering') voiceListen(); });
+
+function goToStartScreen(){
+  kill(T.token); kill(T.aux); T.phase = 'idle'; voiceStop();   // VOICE
+  A.release();
+  $('bBegin').disabled = false; $('bBegin').textContent = 'Tap to begin';
+  $('loadTxt').textContent = 'Stopped. Progress is saved.';
+  $('startOv').classList.remove('hidden');
+}
+function isStandalone(){
+  return !!navigator.standalone || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
+}
+function safeInsets(){
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+  document.body.appendChild(d); const cs = getComputedStyle(d); const r = [parseFloat(cs.paddingTop)||0, parseFloat(cs.paddingBottom)||0]; d.remove(); return r;
+}
+// Undo any leftover zoom (iOS zooms in on form fields and can keep it in home-screen apps)
+function resetZoom(){ const vp = $('vp'); const c = vp.content; vp.content = c + ', x=1'; vp.content = c; }
+resetZoom(); document.addEventListener('focusout', () => setTimeout(resetZoom, 50));
+// iOS home-screen apps report a viewport one status bar shorter than the screen (e.g. 812 on an 874 screen),
+// leaving the tab bar floating. Extend the app by exactly the status-bar inset when that's what's happening.
+function fitHeight(){
+  const app = $('app'); app.style.bottom = ''; app.style.height = ''; app.classList.remove('ios-short');
+  if (!isStandalone() || !window.visualViewport || Math.abs(visualViewport.scale - 1) > 0.01) return;
+  const [top] = safeInsets(); const portrait = innerHeight >= innerWidth;
+  const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  if (top > 0 && Math.abs(innerHeight + top - full) <= 3){
+    // The bottom (full - innerHeight) points get colored but not drawn, so fill them with the bar's
+    // background and keep the bar's icons and labels just above that dead zone.
+    app.style.bottom = 'auto'; app.style.height = full + 'px';
+    app.style.setProperty('--deadzone', (full - innerHeight + 2) + 'px'); app.classList.add('ios-short');
+  }
+}
+if (isStandalone()) $('app').classList.add('standalone');
+[0, 250, 800, 2000].forEach(ms => setTimeout(fitHeight, ms)); addEventListener('load', fitHeight);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(fitHeight, 150); });
+addEventListener('resize', () => setTimeout(fitHeight, 100)); addEventListener('orientationchange', () => setTimeout(fitHeight, 400));
+
+if (!S.firstUse){ S.firstUse = today(); save(); }
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('ear-sw.js', { scope: './' }).catch(() => {});
+}
+checkForUpdate();
+updateHeader(); resetTrainIdle();
+</script>
+</body>
+</html>
