@@ -16,7 +16,8 @@ Never put personal details in the repo: no addresses, account numbers, balances,
 - When a choice is visual (icons, layouts, sounds), show a few options side by side before
   committing to one.
 - Do the work, test it, and push it; then say briefly what changed and anything he must do
-  (for example, swipe the app away and reopen it).
+  (for example, swipe the app away and reopen it). Always include the version number
+  (`APP_VERSION`) in that message, every time something is pushed.
 
 ## Notes
 
