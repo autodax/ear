@@ -248,7 +248,8 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
     <div class="trophy">🏆</div>
     <h1 id="lvlOvTitle">Level up!</h1>
     <p id="lvlOvText"></p>
-    <button class="go" id="bLvlOk">Keep going</button>
+    <button class="go" id="bLvlOk">Go to the next level</button>
+    <button class="go ghost" id="bLvlStay" style="margin-top:10px">Stay on this level</button>
   </div>
 </div>
 <div class="overlay hidden" id="modal">
@@ -263,7 +264,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-22.2';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-23.1';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1181,14 +1182,15 @@ async function grade(){
   pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok, t: Math.round(t), r: q.review ? 1 : 0 }, 40);
   if (statsOn){
     S.levelDeg[lvl] = S.levelDeg[lvl] || {};
-    for (const k in S.conf){ S.conf[k] *= 0.994; if (S.conf[k] < 0.05) delete S.conf[k]; }
+    const shared = sharedStats(lvl);
+    if (shared) for (const k in S.conf){ S.conf[k] *= 0.994; if (S.conf[k] < 0.05) delete S.conf[k]; }
     const chroma = !!LEVELS[S.current].chroma;
     q.labels.forEach((l,i) => {
       pushCap(S.levelDeg[lvl][l] = S.levelDeg[lvl][l] || [], pitchRes[i], 12);
-      S.deg[l] = S.deg[l] || {r:[], t:[]};
+      if (shared){ S.deg[l] = S.deg[l] || {r:[], t:[]};
       pushCap(S.deg[l].r, pitchRes[i], 30);
-      if (pitchRes[i] && q.len === 1) pushCap(S.deg[l].t, Math.round(t), 20);
-      if (!pitchRes[i]){
+      if (pitchRes[i] && q.len === 1) pushCap(S.deg[l].t, Math.round(t), 20); }
+      if (shared && !pitchRes[i]){
         const a = T.ans[i];
         const given = !a ? null : midiIn(q) ? (a.midi == null ? null : (pcToLabel(a.midi, q.key, q.scale, chroma) || '♯/♭')) : a.label;
         if (given) S.conf[l + '>' + given] = (S.conf[l + '>' + given] || 0) + 1;
@@ -1236,11 +1238,11 @@ async function grade(){
 
   // mastery
   updateHeader();
-  if (!q.review && lvl === S.current){
+  if (!q.review){
     const m = masteryInfo(lvl);
     if (m.mastered && S.mastered[lvl] === undefined){
       S.mastered[lvl] = today();
-      if (lvl + 1 < LEVELS.length){ S.unlocked = Math.max(S.unlocked, lvl+1); S.current = lvl+1; }
+      S.unlocked = Math.max(S.unlocked, Math.min(LEVELS.length-1, lvl+1));   // kept only so the saved file keeps its old shape
       save(); updateHeader(); showLevelUp(lvl); return;
     }
   }
@@ -1291,8 +1293,8 @@ async function giveUp(){
     S.levelDeg[lvl] = S.levelDeg[lvl] || {};
     q.labels.forEach(l => {
       pushCap(S.levelDeg[lvl][l] = S.levelDeg[lvl][l] || [], false, 12);
-      S.deg[l] = S.deg[l] || {r:[], t:[]};
-      pushCap(S.deg[l].r, false, 30);
+      if (sharedStats(lvl)){ S.deg[l] = S.deg[l] || {r:[], t:[]};
+      pushCap(S.deg[l].r, false, 30); }
     });
   }
   S.total++; S.days[today()] = (S.days[today()] || 0) + 1;
@@ -1391,7 +1393,8 @@ async function exportProgress(){
   a.download = name; document.body.appendChild(a); a.click(); a.remove(); save(); return true;
 }
 function showLevelUp(lvl){
-  const next = LEVELS[lvl+1];
+  const nl = nextLevel(), next = S.mastered[nl] === undefined ? LEVELS[nl] : null;
+  $('bLvlOk').style.display = next ? '' : 'none';
   $('lvlOvTitle').textContent = `Level ${lvl+1} mastered!`;
   $('lvlOvText').innerHTML = next ? `Up next: <b>${next.title}</b><br>${next.desc}` : 'You have finished every level. Keep the older ones sharp: review questions keep mixing them in.';
   $('lvlOv').classList.remove('hidden'); confetti();
@@ -1459,6 +1462,11 @@ function stopCar(){
    UI: header, views, settings, progress
    ===================================================================== */
 let activeView = 'train';
+// The level to work on next: the first one not yet mastered (the last level if all are)
+function nextLevel(){ for (let i=0;i<LEVELS.length;i++) if (S.mastered[i] === undefined) return i; return LEVELS.length-1; }
+// Answers feed the shared degree bars, trouble spots and drilling only from mastered levels and the next level to master;
+// dabbling on a harder level only counts toward that level's own score.
+const sharedStats = lvl => S.mastered[lvl] !== undefined || lvl === nextLevel();
 function updateHeader(){
   const L = LEVELS[S.current], m = masteryInfo(S.current);
   $('hLvlNum').textContent = 'L' + (S.current+1); $('hLvlTitle').textContent = L.title;
@@ -1557,10 +1565,6 @@ function renderSettings(){
       <div class="row"><div class="lab">Volume</div><input type="range" min="0.2" max="1.2" step="0.05" value="${s.volume}" id="volRange"></div>
       <div class="row"><div><div class="lab">Piano</div><div class="sub">${A.synth ? 'Samples unavailable: using a simple synth' : 'Salamander Grand Piano by Alexander Holm (CC BY 3.0)'}</div></div></div>
     </div>
-    <h2>Levels</h2><div class="card">
-      ${optSelect('_skip','Skip ahead','If you already know earlier material', S.unlocked, LEVELS.map((L,i) => [i, `Unlock through L${i+1}`]))}
-      <div class="row"><div><div class="lab">Undo skipping</div><div class="sub">Levels you skipped (not earned) go back to unmastered, and levels above your highest earned one lock again. Your stats are kept.</div></div><button class="tool" id="bUnskip">Undo</button></div>
-    </div>
     <h2>Sync across devices</h2><div class="card">${syncCardHTML()}</div>
     <h2>Your data</h2><div class="card">
       <div class="row"><div><div class="lab">Export progress</div><div class="sub">${S.lastBackup ? 'Last backup ' + S.lastBackup : 'No backup yet'} · reminder weekly</div></div><button class="tool" style="flex:none;padding:8px 14px" id="bExport">Export</button></div>
@@ -1574,12 +1578,12 @@ function renderProgress(){
   const m = masteryInfo(S.current);
   let lv = '';
   LEVELS.forEach((L,i) => {
-    const done = S.mastered[i] !== undefined, cur = i === S.current, locked = i > S.unlocked;
-    const info = !locked && !done ? masteryInfo(i) : null;
+    const done = S.mastered[i] !== undefined, cur = i === S.current, locked = false, nxt = i === nextLevel() && !done;
+    const info = !done ? masteryInfo(i) : null;
     lv += `<div class="lv ${done?'done':''} ${cur?'cur':''} ${locked?'locked':''}">
       <div class="n">${done ? '✓' : i+1}</div>
       <div class="t"><b>${L.title}</b><div>${L.desc}${info && info.n ? ` · ${(info.acc*100).toFixed(0)}% of last ${info.n}` : ''}</div></div>
-      ${!locked && !cur ? `<button class="act" data-lv="${i}">Practice</button>` : cur ? '<span class="act" style="color:var(--dim)">Now</span>' : ''}</div>`;
+      ${!cur ? `<button class="act" data-lv="${i}">${nxt ? 'Up next · Practice' : 'Practice'}</button>` : cur ? '<span class="act" style="color:var(--dim)">Now</span>' : ''}</div>`;
   });
   COMING.forEach(t => { lv += `<div class="lv locked"><div class="n">·</div><div class="t"><b>${t}</b><div>Coming later</div></div></div>`; });
   let bars = '';
@@ -1630,14 +1634,13 @@ $('tPiano').addEventListener('pointerdown', e => {
   onAnswer({ midi: m });
 });
 $('cGo').addEventListener('click', toggleCar);
-$('bLvlOk').addEventListener('click', () => { $('lvlOv').classList.add('hidden'); T.cadKey = null; T.roundKey = null; renderPad(null); nextQuestion(); });
+$('bLvlOk').addEventListener('click', () => { S.current = nextLevel(); save(); updateHeader(); $('lvlOv').classList.add('hidden'); T.cadKey = null; T.roundKey = null; renderPad(null); nextQuestion(); });
+$('bLvlStay').addEventListener('click', () => { $('lvlOv').classList.add('hidden'); T.cadKey = null; T.roundKey = null; renderPad(null); nextQuestion(); });
 
 document.addEventListener('change', e => {
   const sel = e.target.closest('select[data-opt]');
   if (sel){
     const id = sel.dataset.opt, raw = sel.value;
-    if (id === '_skip'){ const n = +raw; if (n > S.unlocked){ for (let i=0;i<n;i++) if (S.mastered[i] === undefined) S.mastered[i] = 'skipped';
-        S.unlocked = n; S.current = n; save(); updateHeader(); toast(`Unlocked through L${n+1}`); } else sel.value = S.unlocked; return; }
     const v = isNaN(+raw) ? raw : +raw; setPath(id, v); updateHeader(); if (id === 'answerWith' && !(T.q && T.phase !== 'idle')) renderPad(null); return;
   }
   if (e.target.id === 'fImport'){
@@ -1666,16 +1669,6 @@ document.addEventListener('click', e => {
   if (e.target.id === 'bSyncConnect'){ const v = $('gTok').value.trim(); if (v) syncConnect(v); return; }
   if (e.target.id === 'bSyncNow'){ syncNow(); return; }
   if (e.target.id === 'bSyncOff'){ if (confirm('Stop syncing on this device? Your gist on GitHub is kept.')){ SY = {}; saveSync(); renderSettings(); toast('Sync is off on this device'); } return; }
-  if (e.target.id === 'bUnskip'){
-    const sk = Object.keys(S.mastered).filter(k => S.mastered[k] === 'skipped');
-    if (!sk.length){ toast('No skipped levels'); return; }
-    if (!confirm('Mark the skipped levels as not yet mastered and lock the levels above your highest earned one? Your stats are kept.')) return;
-    sk.forEach(k => delete S.mastered[k]);
-    const earned = Object.keys(S.mastered).map(Number);
-    S.unlocked = earned.length ? Math.min(LEVELS.length-1, Math.max(...earned) + 1) : 0;
-    S.current = Math.min(S.current, S.unlocked);
-    save(); updateHeader(); renderSettings(); resetTrainIdle(); toast(`Back to level ${S.current+1}`); return;
-  }
   if (e.target.id === 'bExport'){ exportProgress().then(() => renderSettings()); return; }
   if (e.target.id === 'bReset'){ if (confirm('Erase all progress and settings?')){ S = freshState(); save(); updateHeader(); renderSettings(); resetTrainIdle(); toast('Reset'); } }
 });
