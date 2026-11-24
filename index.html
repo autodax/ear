@@ -259,7 +259,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.6';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.7';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -380,52 +380,52 @@ const FEEL2 = [[1,2],[2,2],[1,1],[1.5,1.5],[1,3]];
 const FEEL3 = [[1,1,2],[.5,.5,2],[1,.5,1.5],[1.5,.5,2],[1,1,1],[2,1,2]];
 const LEVELS = [
   // ---- The first steps: only 1, 3 and 5. Single notes, then echoes, then easy rhythm, then a chord underneath, then the same phrase in another key.
-  {id:'home-135', title:'Home base: 1 3 5',    desc:'Key of C · single notes from the three steadiest notes', idx:[0,2,4], range:R1, keys:[0], len:1, input:'numbers', cad:'I-V-I'},
-  {id:'two-135-c', title:'Two-note echoes: 1 3 5', desc:'Name both notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', cad:'I-V-I'},
-  {id:'three-135-c', title:'Three-note echoes: 1 3 5', desc:'Name all three notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', cad:'I-V-I'},
-  {id:'feel-2-135', title:'Two notes with a rhythm', desc:'Short piano phrases with an easy rhythm. Name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', feel:FEEL2, cad:'I-V-I'},
-  {id:'feel-3-135', title:'Three notes with a rhythm', desc:'Short piano phrases with an easy rhythm. Name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', feel:FEEL3, cad:'I-V-I'},
-  {id:'harm-135', title:'Phrases over a chord', desc:'The phrase now has a chord underneath, so you hear it against home · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'numbers', feel:FEEL3, under:true, cad:'I-IV-V-I'},
-  {id:'xpose-2-135', title:'Play it in another key: two notes', desc:'Hear a phrase, then play it on the keyboard in a new key. You also get feedback on its shape: up, down or the same', idx:[0,2,4], range:RP, keys:KEYS_A, len:2, input:'piano', xpose:true, feel:FEEL2, noSpeed:true, cad:'I-IV-V-I'},
-  {id:'xpose-3-135', title:'Play it in another key: three notes', desc:'The same, with three-note phrases', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'piano', xpose:true, feel:FEEL3, noSpeed:true, cad:'I-IV-V-I'},
+  {id:'home-135', title:'Single notes: 1 3 5',    desc:'Single notes from the three steadiest notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:1, input:'numbers', cad:'I-V-I'},
+  {id:'two-135-c', title:'Phrases: two notes, 1 3 5', desc:'Name both notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', cad:'I-V-I'},
+  {id:'three-135-c', title:'Phrases: three notes, 1 3 5', desc:'Name all three notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', cad:'I-V-I'},
+  {id:'feel-2-135', title:'Rhythm phrases: two notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', feel:FEEL2, cad:'I-V-I'},
+  {id:'feel-3-135', title:'Rhythm phrases: three notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', feel:FEEL3, cad:'I-V-I'},
+  {id:'harm-135', title:'Phrases over a chord: 1 3 5', desc:'A chord sounds under the phrase, so you hear it against home · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'numbers', feel:FEEL3, under:true, cad:'I-IV-V-I'},
+  {id:'xpose-2-135', title:'Another key: two notes, 1 3 5', desc:'Hear a phrase, then play it on the keyboard in a new key. You also get feedback on its shape: up, down or the same · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:2, input:'piano', xpose:true, feel:FEEL2, noSpeed:true, cad:'I-IV-V-I'},
+  {id:'xpose-3-135', title:'Another key: three notes, 1 3 5', desc:'The same, with three-note phrases · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'piano', xpose:true, feel:FEEL3, noSpeed:true, cad:'I-IV-V-I'},
   // ---- Filling in the scale, then the same ladder in every key
-  {id:'pentatonic', title:'Pentatonic: add 2, 6', desc:() => `${lbl(modeScale(), [0,1,2,4,5]).join(' ')} · keys C, G and F. No 4th or 7th note yet`, idx:[0,1,2,4,5], range:R1, keys:KEYS_A, len:1, input:'numbers'},
-  {id:'add-4', title:'Add 4',                desc:'The first six notes · keys C, G, F, D and B♭', idx:[0,1,2,3,4,5], range:R1, keys:KEYS_B, len:1, input:'numbers'},
-  {id:'full-scale', title:'Add 7: full scale', desc:'All seven notes · seven keys, still no sharps beyond A',          idx:IDX7, range:R1, keys:KEYS_C, len:1, input:'numbers'},
-  {id:'new-key-each-round', title:'New key every round',  desc:'One octave · new key and octave each round', idx:IDX7, range:R1, len:1, input:'numbers'},
-  {id:'three-octaves', title:'3 octaves, new keys', desc:'Low to high · new key each round', idx:IDX7, range:R3, len:1, input:'numbers'},
-  {id:'two-135-any', title:'Two-note phrases: 1 3 5, any key', desc:'Back to just 1, 3 and 5, now in every key', idx:[0,2,4], range:RP, len:2, input:'numbers'},
-  {id:'three-135-any', title:'Three-note phrases: 1 3 5, any key', desc:'Three notes from 1, 3 and 5, in every key', idx:[0,2,4], range:RP, len:3, input:'numbers'},
-  {id:'two-note', title:'Two-note phrases',     desc:'Name both notes in order',         idx:IDX7, range:RP, len:2, input:'numbers'},
-  {id:'three-note', title:'Three-note phrases',   desc:'Short melodic fragments',          idx:IDX7, range:RP, len:3, input:'numbers'},
-  {id:'four-note', title:'Four-note phrases',    desc:'Longer fragments',                 idx:IDX7, range:RP, len:4, input:'numbers'},
-  {id:'five-note', title:'Five-note phrases',      desc:'One step up from four notes', idx:IDX7, range:RP, len:5, input:'numbers'},
-  {id:'six-note', title:'Six-note melodies',    desc:'Long melodic fragments',           idx:IDX7, range:RP, len:6, input:'numbers'},
+  {id:'pentatonic', title:'Single notes: add 2 and 6', desc:() => `${lbl(modeScale(), [0,1,2,4,5]).join(' ')} · keys C, G and F. No 4th or 7th note yet`, idx:[0,1,2,4,5], range:R1, keys:KEYS_A, len:1, input:'numbers'},
+  {id:'add-4', title:'Single notes: add 4',                desc:'The first six notes · keys C, G, F, D and B♭', idx:[0,1,2,3,4,5], range:R1, keys:KEYS_B, len:1, input:'numbers'},
+  {id:'full-scale', title:'Single notes: add 7, full scale', desc:'All seven notes · seven keys',          idx:IDX7, range:R1, keys:KEYS_C, len:1, input:'numbers'},
+  {id:'new-key-each-round', title:'Single notes: new key every round',  desc:'One octave · a new key and octave each round', idx:IDX7, range:R1, len:1, input:'numbers'},
+  {id:'three-octaves', title:'Single notes: three octaves', desc:'Low to high · a new key each round', idx:IDX7, range:R3, len:1, input:'numbers'},
+  {id:'two-135-any', title:'Phrases: two notes, 1 3 5, any key', desc:'Two notes from 1, 3 and 5, now in every key', idx:[0,2,4], range:RP, len:2, input:'numbers'},
+  {id:'three-135-any', title:'Phrases: three notes, 1 3 5, any key', desc:'Three notes from 1, 3 and 5, in every key', idx:[0,2,4], range:RP, len:3, input:'numbers'},
+  {id:'two-note', title:'Phrases: two notes',     desc:'Name both notes, in order · every key',         idx:IDX7, range:RP, len:2, input:'numbers'},
+  {id:'three-note', title:'Phrases: three notes',   desc:'Name all three notes, in order · every key',          idx:IDX7, range:RP, len:3, input:'numbers'},
+  {id:'four-note', title:'Phrases: four notes',    desc:'Longer fragments · every key',                 idx:IDX7, range:RP, len:4, input:'numbers'},
+  {id:'five-note', title:'Phrases: five notes',      desc:'One step up from four notes · every key', idx:IDX7, range:RP, len:5, input:'numbers'},
+  {id:'six-note', title:'Phrases: six notes',    desc:'Long melodic fragments · every key',           idx:IDX7, range:RP, len:6, input:'numbers'},
   // ---- Chromatic notes (the scale plus notes outside it). The pad shows all twelve.
   {id:'chroma-1', title:'Chromatic: one outside note', desc:'The scale plus its single most common outsider', chroma:true, outs:1, range:R1, len:1, input:'numbers', limitMult:1.5},
-  {id:'chroma-2', title:'Chromatic: first outside notes', desc:'The scale plus its two most common outsiders', chroma:true, outs:2, range:R1, len:1, input:'numbers', limitMult:1.5},
-  {id:'chroma-4', title:'Chromatic: more outside notes', desc:'Two more notes from outside the scale', chroma:true, outs:4, range:R1, len:1, input:'numbers', limitMult:1.5},
-  {id:'chroma-all', title:'Chromatic: all twelve', desc:'Every note, including the last outsider', chroma:true, outs:5, range:R1, len:1, input:'numbers', limitMult:1.5},
+  {id:'chroma-2', title:'Chromatic: two outside notes', desc:'The scale plus its two most common outsiders', chroma:true, outs:2, range:R1, len:1, input:'numbers', limitMult:1.5},
+  {id:'chroma-4', title:'Chromatic: four outside notes', desc:'Two more notes from outside the scale', chroma:true, outs:4, range:R1, len:1, input:'numbers', limitMult:1.5},
+  {id:'chroma-all', title:'Chromatic: all twelve notes', desc:'Every note, including the last outsider', chroma:true, outs:5, range:R1, len:1, input:'numbers', limitMult:1.5},
   {id:'chroma-three', title:'Chromatic: three-note phrases', desc:'Fragments that wander outside the scale', chroma:true, outs:5, range:RP, len:3, input:'numbers', limitMult:1.5},
   // ---- Chords (heard in the key; answer with scale degrees)
   {id:'chord-roots-15', title:'Chord roots: 1 and 5',   desc:'Just two chords to tell apart', kind:'chord', gen:'root', roots:[0,4], range:R1, len:1, input:'numbers', limitMult:1.5},
   {id:'chord-roots-145', title:'Chord roots: 1, 4, 5', desc:'A chord plays. Name the scale degree it is built on', kind:'chord', gen:'root', roots:[0,3,4], range:R1, len:1, input:'numbers', limitMult:1.5},
-  {id:'chord-roots-all', title:'Chord roots: every chord', desc:'Chords on all seven degrees', kind:'chord', gen:'root', roots:IDX7, range:R1, len:1, input:'numbers', limitMult:1.5},
+  {id:'chord-roots-all', title:'Chord roots: all seven', desc:'Chords on all seven degrees', kind:'chord', gen:'root', roots:IDX7, range:R1, len:1, input:'numbers', limitMult:1.5},
   {id:'chord-inversions', title:'Chord roots: inversions', desc:'The chord can be turned upside down, so the lowest note may not be the root', kind:'chord', gen:'root', inv:true, roots:IDX7, range:R1, len:1, input:'numbers', limitMult:1.75},
-  {id:'chord-arpeggios', title:'Chord tones: arpeggios', desc:'A chord is played one note at a time. Name its three notes', kind:'chord', gen:'arp', roots:IDX7, idx:IDX7, range:RP, len:3, input:'numbers'},
-  {id:'block-145', title:'Block chords on 1, 4, 5', desc:'Name the three notes of a chord played together, from just three chords', kind:'chord', gen:'block', roots:[0,3,4], idx:IDX7, range:RP, len:3, input:'numbers', limitMult:1.25},
-  {id:'chord-block', title:'Chord tones: block chords', desc:'Name the three notes of a chord played together, lowest first', kind:'chord', gen:'block', roots:IDX7, range:RP, len:3, input:'numbers', limitMult:1.25},
+  {id:'chord-arpeggios', title:'Chord tones: one at a time', desc:'A chord is played one note at a time. Name its three notes', kind:'chord', gen:'arp', roots:IDX7, idx:IDX7, range:RP, len:3, input:'numbers'},
+  {id:'block-145', title:'Chord tones: together, 1 4 5 chords', desc:'Name the three notes of a chord played together, from just three chords', kind:'chord', gen:'block', roots:[0,3,4], idx:IDX7, range:RP, len:3, input:'numbers', limitMult:1.25},
+  {id:'chord-block', title:'Chord tones: together, any chord', desc:'Name the three notes of a chord played together, lowest first', kind:'chord', gen:'block', roots:IDX7, range:RP, len:3, input:'numbers', limitMult:1.25},
   // ---- Singing back (needs the microphone)
   {id:'sing-135', title:'Sing back: 1 3 5',       desc:'Hear a note, then sing it. Only the three steadiest notes. Uses the microphone', kind:'sing', idx:[0,2,4], range:R1, len:1, input:'sing', limitMult:3},
-  {id:'sing-pentatonic', title:'Sing it back: pentatonic', desc:'Hear a note in the key, then sing it. Any octave counts. Uses the microphone', kind:'sing', idx:[0,1,2,4,5], range:R1, len:1, input:'sing', limitMult:3},
-  {id:'sing-all', title:'Sing it back: all seven', desc:'Sing any note of the scale', kind:'sing', idx:IDX7, range:R1, len:1, input:'sing', limitMult:3},
+  {id:'sing-pentatonic', title:'Sing back: pentatonic', desc:'Hear a note in the key, then sing it. Any octave counts. Uses the microphone', kind:'sing', idx:[0,1,2,4,5], range:R1, len:1, input:'sing', limitMult:3},
+  {id:'sing-all', title:'Sing back: all seven', desc:'Sing any note of the scale', kind:'sing', idx:IDX7, range:R1, len:1, input:'sing', limitMult:3},
   {id:'sing-three', title:'Sing back: three-note phrases', desc:'Sing the whole fragment, one steady note at a time', kind:'sing', idx:IDX7, range:RP, len:3, input:'sing', limitMult:3},
   // ---- Rhythm
-  {id:'tap-basic', title:'Tap the rhythm',       desc:'Count in, listen, then tap the rhythm back. Quarter and eighth notes', kind:'rhythm', rhy:'tap', patterns:RHY_BASIC, tol:.25, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
+  {id:'tap-basic', title:'Tap the rhythm: quarter and eighth notes',       desc:'Count in, listen, then tap the rhythm back', kind:'rhythm', rhy:'tap', patterns:RHY_BASIC, tol:.25, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
   {id:'tap-offbeat', title:'Tap the rhythm: off-beats', desc:'Syncopation and dotted notes', kind:'rhythm', rhy:'tap', patterns:RHY_SYNC, tol:.22, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
-  {id:'melody-2', title:'Melody with rhythm: 2 notes', desc:'Play two notes with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL2, tol:.28, idx:IDX7, range:RP, len:2, input:'piano', noSpeed:true},
-  {id:'melody-3', title:'Melody with rhythm: 3 notes', desc:'Play the notes on the keyboard with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL3, tol:.28, idx:IDX7, range:RP, len:3, input:'piano', noSpeed:true},
-  {id:'melody-5', title:'Melody with rhythm: 5 notes', desc:'Longer melodies with mixed note lengths', kind:'rhythm', rhy:'melody', patterns:RHY_MEL5, tol:.28, idx:IDX7, range:RP, len:5, input:'piano', noSpeed:true}
+  {id:'melody-2', title:'Melody with rhythm: two notes', desc:'Play two notes with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL2, tol:.28, idx:IDX7, range:RP, len:2, input:'piano', noSpeed:true},
+  {id:'melody-3', title:'Melody with rhythm: three notes', desc:'Play the notes on the keyboard with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL3, tol:.28, idx:IDX7, range:RP, len:3, input:'piano', noSpeed:true},
+  {id:'melody-5', title:'Melody with rhythm: five notes', desc:'Longer melodies with mixed note lengths', kind:'rhythm', rhy:'melody', patterns:RHY_MEL5, tol:.28, idx:IDX7, range:RP, len:5, input:'piano', noSpeed:true}
 ];
 // Fill in defaults so every level has the same shape (old levels list their degrees; newer ones their scale steps)
 // Steve (Nov 23 2026): no keyboard-only levels; the 123 / Keys button works on every level. The four old "Play it" levels
