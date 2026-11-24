@@ -253,7 +253,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.11';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.12';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -380,8 +380,6 @@ const LEVELS = [
   {id:'feel-2-135', title:'Rhythm phrases: two notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', feel:FEEL2, cad:'I-V-I'},
   {id:'feel-3-135', title:'Rhythm phrases: three notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', feel:FEEL3, cad:'I-V-I'},
   {id:'harm-135', title:'Phrases over a chord: 1 3 5', desc:'A chord sounds under the phrase, so you hear it against home · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'numbers', feel:FEEL3, under:true, cad:'I-IV-V-I'},
-  {id:'xpose-2-135', title:'Another key: two notes, 1 3 5', desc:'Hear a phrase, then play it on the keyboard in a new key (no second cadence, so the phrase stays fresh). You also get feedback on its shape: up, down or the same · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:2, input:'piano', xpose:true, feel:FEEL2, noSpeed:true, cad:'I-IV-V-I'},
-  {id:'xpose-3-135', title:'Another key: three notes, 1 3 5', desc:'The same, with three-note phrases · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'piano', xpose:true, feel:FEEL3, noSpeed:true, cad:'I-IV-V-I'},
   // ---- Filling in the scale, then the same ladder in every key
   {id:'pentatonic', title:'Single notes: add 2 and 6', desc:() => `${lbl(modeScale(), [0,1,2,4,5]).join(' ')} · keys C, G and F. No 4th or 7th note yet`, idx:[0,1,2,4,5], range:R1, keys:KEYS_A, len:1, input:'numbers'},
   {id:'add-4', title:'Single notes: add 4',                desc:'The first six notes · keys C, G, F, D and B♭', idx:[0,1,2,3,4,5], range:R1, keys:KEYS_B, len:1, input:'numbers'},
@@ -412,9 +410,9 @@ const LEVELS = [
   // ---- Rhythm
   {id:'tap-basic', title:'Tap the rhythm: quarter and eighth notes',       desc:'Count in, listen, then tap the rhythm back', kind:'rhythm', rhy:'tap', patterns:RHY_BASIC, tol:.25, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
   {id:'tap-offbeat', title:'Tap the rhythm: off-beats', desc:'Syncopation and dotted notes', kind:'rhythm', rhy:'tap', patterns:RHY_SYNC, tol:.22, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
-  {id:'melody-2', title:'Melody with rhythm: two notes', desc:'Play two notes with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL2, tol:.28, idx:IDX7, range:RP, len:2, input:'piano', noSpeed:true},
-  {id:'melody-3', title:'Melody with rhythm: three notes', desc:'Play the notes on the keyboard with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL3, tol:.28, idx:IDX7, range:RP, len:3, input:'piano', noSpeed:true},
-  {id:'melody-5', title:'Melody with rhythm: five notes', desc:'Longer melodies with mixed note lengths', kind:'rhythm', rhy:'melody', patterns:RHY_MEL5, tol:.28, idx:IDX7, range:RP, len:5, input:'piano', noSpeed:true}
+  {id:'melody-2', title:'Melody with rhythm: two notes', desc:'Name two notes on the pad with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL2, tol:.28, idx:IDX7, range:RP, len:2, input:'numbers', noSpeed:true},
+  {id:'melody-3', title:'Melody with rhythm: three notes', desc:'Name the notes on the pad with the rhythm you heard', kind:'rhythm', rhy:'melody', patterns:RHY_MEL3, tol:.28, idx:IDX7, range:RP, len:3, input:'numbers', noSpeed:true},
+  {id:'melody-5', title:'Melody with rhythm: five notes', desc:'Longer melodies with mixed note lengths', kind:'rhythm', rhy:'melody', patterns:RHY_MEL5, tol:.28, idx:IDX7, range:RP, len:5, input:'numbers', noSpeed:true}
 ];
 // Fill in defaults so every level has the same shape (old levels list their degrees; newer ones their scale steps)
 // Steve (Nov 23 2026): no keyboard-only levels; the 123 / Keys button works on every level. The four old "Play it" levels
@@ -1041,7 +1039,8 @@ async function playResolution(s, key, token, lightPad, scale='major', alt=0){
 
 // How answers are given: the number pad or the on-screen keyboard. 'level' follows the level; the toggle on the
 // training screen (or Settings) overrides it on every level. Singing and tapping levels always use their own input.
-function inputFor(L){ if (L.input === 'tap' || L.xpose) return L.input; const a = S.settings.answerWith; return a === 'pad' ? 'numbers' : a === 'piano' ? 'piano' : L.input; }
+// Every lesson is answered on the number pad (scale degrees), except tapping rhythms. The keyboard code is kept for a later keyboard-finding lesson.
+function inputFor(L){ return L.input === 'tap' ? 'tap' : 'numbers'; }
 const ansKey = q => q.key2 != null ? q.key2 : q.key;   // the key an answer is given in (differs from the heard key when you replay a phrase in another key)
 const midiIn = q => q.input === 'piano';   // answers that arrive as a pitch, not a label
 function updateInputBtn(usePiano){ const b = $('bInput'); if (b) b.textContent = usePiano ? '🎹 Keys' : '123 Pad'; }
@@ -1058,7 +1057,7 @@ function renderPad(q){
   const pad = $('tPad'), piano = $('tPiano'), tap = $('tTap');
   const cur = LEVELS[S.current], mode = q ? q.input : inputFor(cur);
   updateInputBtn(mode === 'piano');
-  $('bInput').classList.toggle('hidden', mode === 'tap' || !!(q ? LEVELS[q.lvl] : cur).xpose);
+  $('bInput').classList.add('hidden');
   pad.classList.toggle('hidden', mode !== 'numbers'); piano.classList.toggle('hidden', mode !== 'piano');
   tap.classList.toggle('hidden', mode !== 'tap');
   if (mode === 'piano'){ renderPiano(q ? ansKey(q) : (T.roundKey || 0), q); return; }
@@ -1178,7 +1177,7 @@ async function rhythmRound(q, token){
   T.qEnd = 0;
   setMsg('Listen…', `${q.bpm} beats a minute · four clicks, then the rhythm`);
   await A.seq([...clicks(4), ...q.rhythm.map((d,i) => ev(q.midi[i], d*beat, 0.85, 1))], token); if (token.dead) return;
-  setMsg('Your turn', q.rhy === 'tap' ? 'Four clicks, then tap it back starting on the next beat' : 'Four clicks, then play it back starting on the next beat');
+  setMsg('Your turn', q.rhy === 'tap' ? 'Four clicks, then tap it back starting on the next beat' : 'Four clicks, then tap the notes back starting on the next beat');
   const t0 = performance.now() + 60;
   const p = A.seq(clicks(4), token);
   await wait(beat*3.6*1000 + 60, token); if (token.dead) return;
@@ -1646,7 +1645,6 @@ function renderSettings(){
       ${optSelect('_mode','Practice in','Every level is heard and named in this mode. Each mode keeps its own progress, so switching never loses anything', S.mode, MODE_ORDER.map(k => [k, modeName(k)]))}
     </div>
     <h2>Keyboard</h2><div class="card">
-      ${optSelect('answerWith','Answer with','Works on every level. Also the 123 / Keys button on the training screen. On the keyboard, any octave counts', s.answerWith === 'piano' ? 'piano' : 'level', [['level','Number pad'],['piano','Keyboard']])}
       ${optToggle('labelKeys','Note names on keys','Turn off once you know the keyboard', s.labelKeys)}
       ${optToggle('markTonic','Mark the tonic','Dot on the key’s home note', s.markTonic)}
     </div>
