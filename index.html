@@ -87,11 +87,6 @@ nav button.on{color:var(--accent)}
 .deg.reveal{box-shadow:inset 0 0 0 3px var(--good)}
 .pad.locked .deg{pointer-events:none}
 .pad.chroma{gap:8px 8px}.pad.chroma .deg{height:54px;font-size:24px}
-.sing{background:var(--panel);border-radius:14px;margin-top:14px;padding:18px 14px;text-align:center}
-.sing-note{font-size:54px;line-height:1.1}
-.sing-sub{color:var(--dim);font-size:14px;min-height:20px;margin-top:6px}
-.sing-meter{height:8px;background:var(--panel2);border-radius:4px;margin-top:14px;overflow:hidden}
-.sing-meter i{display:block;height:100%;width:0;background:var(--accent);transition:width .08s}
 .tapbtn{display:block;width:100%;height:170px;margin-top:14px;border-radius:18px;background:var(--panel2);font-size:30px;font-weight:800;touch-action:manipulation}
 .tapbtn:active{background:var(--accent);color:var(--on-accent)}
 .go{display:block;width:100%;margin-top:14px;padding:16px;border-radius:14px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--on-accent);font-weight:800;font-size:18px}
@@ -203,7 +198,6 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
         </div>
       </div>
       <div class="pad" id="tPad"></div>
-      <div class="sing hidden" id="tSing"><div class="sing-note" id="sNote">🎤</div><div class="sing-sub" id="sSub"></div><div class="sing-meter"><i id="sMeter"></i></div></div>
       <button class="tapbtn hidden" id="tTap">Tap</button>
       <div class="piano hidden" id="tPiano"></div>
       <button class="go" id="bGo">Start</button>
@@ -259,7 +253,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.7';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.8';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -354,8 +348,8 @@ function cadence(pc, oct=0, type='I-IV-V-I', scale='major'){
    keys: the keys a round may use (a new key each round; the pool grows with the early levels)
    scales: the scale of a round (minor and the modes use the number labels of their own scale, e.g. 1 2 ♭3 4 5 ♭6 ♭7)
    idx: which scale steps are in play (0 = 1 … 6 = 7). degrees: the labels they show as (all scales of the level together)
-   kind: 'notes' (default) | 'chord' | 'sing' | 'rhythm'
-   input: 'numbers' | 'piano' (play the actual notes in the key you heard) | 'sing' | 'tap'
+   kind: 'notes' (default) | 'chord' | 'rhythm'
+   input: 'numbers' | 'piano' (play the actual notes in the key you heard) | 'tap'
    Every level has a permanent `id`; saved progress is filed under it, so levels can be added or moved freely. Never reuse an id for a different level.
    ===================================================================== */
 // Every range is bracketed by home notes (1) at the bottom and the top. RP (phrases and keyboard levels) is a window around the tonic, not bracketed.
@@ -415,11 +409,6 @@ const LEVELS = [
   {id:'chord-arpeggios', title:'Chord tones: one at a time', desc:'A chord is played one note at a time. Name its three notes', kind:'chord', gen:'arp', roots:IDX7, idx:IDX7, range:RP, len:3, input:'numbers'},
   {id:'block-145', title:'Chord tones: together, 1 4 5 chords', desc:'Name the three notes of a chord played together, from just three chords', kind:'chord', gen:'block', roots:[0,3,4], idx:IDX7, range:RP, len:3, input:'numbers', limitMult:1.25},
   {id:'chord-block', title:'Chord tones: together, any chord', desc:'Name the three notes of a chord played together, lowest first', kind:'chord', gen:'block', roots:IDX7, range:RP, len:3, input:'numbers', limitMult:1.25},
-  // ---- Singing back (needs the microphone)
-  {id:'sing-135', title:'Sing back: 1 3 5',       desc:'Hear a note, then sing it. Only the three steadiest notes. Uses the microphone', kind:'sing', idx:[0,2,4], range:R1, len:1, input:'sing', limitMult:3},
-  {id:'sing-pentatonic', title:'Sing back: pentatonic', desc:'Hear a note in the key, then sing it. Any octave counts. Uses the microphone', kind:'sing', idx:[0,1,2,4,5], range:R1, len:1, input:'sing', limitMult:3},
-  {id:'sing-all', title:'Sing back: all seven', desc:'Sing any note of the scale', kind:'sing', idx:IDX7, range:R1, len:1, input:'sing', limitMult:3},
-  {id:'sing-three', title:'Sing back: three-note phrases', desc:'Sing the whole fragment, one steady note at a time', kind:'sing', idx:IDX7, range:RP, len:3, input:'sing', limitMult:3},
   // ---- Rhythm
   {id:'tap-basic', title:'Tap the rhythm: quarter and eighth notes',       desc:'Count in, listen, then tap the rhythm back', kind:'rhythm', rhy:'tap', patterns:RHY_BASIC, tol:.25, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
   {id:'tap-offbeat', title:'Tap the rhythm: off-beats', desc:'Syncopation and dotted notes', kind:'rhythm', rhy:'tap', patterns:RHY_SYNC, tol:.22, degrees:[], range:RP, len:4, input:'tap', noSpeed:true},
@@ -763,8 +752,8 @@ function kill(token){ if (!token) return; token.dead = true; for (const [id,res]
 // With voice answers on, the session is put in play-and-record mode from the start, so iOS doesn't switch modes
 // (and glitch the sound) at the moment the microphone turns on.
 // With voice answers on the iPhone plays quieter, so the notes get a boost (setting, default louder).
-const masterGain = () => S.settings.volume * (S.settings.voiceOn || Sing.on ? (S.settings.voiceBoost || 1.5) : 1);
-const audioType = () => ((S.settings.voiceOn && (window.SpeechRecognition || window.webkitSpeechRecognition)) || Sing.on) ? 'play-and-record' : 'playback';
+const masterGain = () => S.settings.volume * (S.settings.voiceOn ? (S.settings.voiceBoost || 1.5) : 1);
+const audioType = () => (S.settings.voiceOn && (window.SpeechRecognition || window.webkitSpeechRecognition)) ? 'play-and-record' : 'playback';
 function unlockIOS(){
   try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){}
   makeSilent();
@@ -1001,75 +990,6 @@ function masteryInfo(lvl){
 function isYoung(lvl){ return S.mastered[lvl] === undefined && !S.pending[lvl] && (S.lvDays[lvl] || []).length < 3; }
 
 /* =====================================================================
-   SINGING: the microphone listens for steady sung notes (YIN pitch tracking).
-   Nothing is recorded or sent anywhere; the sound is only measured. Any octave counts.
-   ===================================================================== */
-function detectPitch(buf, sr){
-  const N = buf.length; let sum = 0; for (let i=0;i<N;i++) sum += buf[i]*buf[i];
-  const rms = Math.sqrt(sum/N); if (rms < 0.012) return null;                 // too quiet: nobody is singing
-  const dec = sr >= 32000 ? 2 : 1, n = Math.floor(N/dec), fs = sr/dec, x = new Float32Array(n);
-  for (let i=0;i<n;i++) x[i] = dec === 2 ? (buf[2*i] + buf[2*i+1]) * 0.5 : buf[i];
-  const tauMax = Math.min(Math.floor(fs/70), (n >> 1) - 1), tauMin = Math.max(2, Math.floor(fs/900)), W = n - tauMax;
-  const cm = new Float32Array(tauMax + 2); cm[0] = 1; let run = 0;
-  for (let tau = 1; tau <= tauMax; tau++){
-    let d = 0; for (let i=0;i<W;i++){ const v = x[i] - x[i+tau]; d += v*v; }
-    run += d; cm[tau] = run > 0 ? d*tau/run : 1;
-  }
-  let tau = -1;
-  for (let t = tauMin; t < tauMax; t++){ if (cm[t] < 0.15){ while (t+1 < tauMax && cm[t+1] < cm[t]) t++; tau = t; break; } }
-  if (tau < 0) return null;
-  const a = cm[tau-1], b = cm[tau], c = cm[tau+1], den = a - 2*b + c;
-  const f = fs / (den ? tau + 0.5*(a - c)/den : tau);
-  if (f < 65 || f > 1100) return null;
-  return { midi: 69 + 12*Math.log2(f/440), rms };
-}
-const medianOf = a => { const b = a.slice().sort((x,y) => x-y); return b[b.length >> 1]; };
-const Sing = {
-  on:false, stream:null, src:null, an:null, buf:null, timer:null, srcCtx:null, holdUntil:0, cb:null, lv:null, run:[], emitted:false, silent:0,
-  async start(){
-    if (this.on && A.ctx && this.srcCtx === A.ctx) return true;
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
-    try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch(e){}
-    try { if (!this.stream) this.stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } }); }
-    catch(e){ try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(_){} return false; }
-    A.engage(); if (!A.ctx) return false;
-    if (A.ctx.state !== 'running') await A.ctx.resume().catch(() => {});
-    try { this.src && this.src.disconnect(); } catch(e){}
-    this.srcCtx = A.ctx; this.src = A.ctx.createMediaStreamSource(this.stream);
-    this.an = A.ctx.createAnalyser(); this.an.fftSize = 2048; this.buf = new Float32Array(this.an.fftSize); this.src.connect(this.an);
-    this.on = true; clearInterval(this.timer); this.timer = setInterval(() => this.tick(), 30);
-    if (A.master) A.master.gain.value = masterGain();
-    return true;
-  },
-  stop(){
-    clearInterval(this.timer); this.timer = null; this.cb = null; this.lv = null;
-    try { this.src && this.src.disconnect(); } catch(e){}
-    this.src = null; this.an = null;
-    if (this.stream){ this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
-    const was = this.on; this.on = false;
-    if (was){ try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} if (A.master) A.master.gain.value = masterGain(); }
-  },
-  begin(onNote, onLevel){ this.cb = this.keepCb = onNote; this.lv = this.keepLv = onLevel; this.run = []; this.emitted = false; this.silent = 0; },
-  end(){ this.cb = null; this.lv = null; },
-  hold(ms){ this.holdUntil = performance.now() + ms; this.run = []; this.emitted = false; this.silent = 0; },   // ignore the sound for a while (the app's own piano)
-  tick(){
-    if (!this.on || !this.an || !A.ctx) return;
-    this.an.getFloatTimeDomainData(this.buf);
-    if (performance.now() < this.holdUntil){ this.lv && this.lv(0); return; }
-    const r = detectPitch(this.buf, A.ctx.sampleRate);
-    if (!r){ this.silent++; this.lv && this.lv(0); if (this.silent >= 3){ this.run = []; this.emitted = false; } return; }
-    this.silent = 0; this.lv && this.lv(Math.min(1, r.rms*6));
-    // A "note" is a stretch of steady pitch: six readings (about 0.2 s) within two thirds of a semitone. A new note starts when the pitch jumps or the voice stops.
-    if (this.run.length >= 3 && Math.abs(r.midi - medianOf(this.run)) > 0.6){ this.run = []; this.emitted = false; }
-    this.run.push(r.midi); if (this.run.length > 24) this.run.shift();
-    if (!this.emitted && this.cb && this.run.length >= 6){
-      const last = this.run.slice(-6);
-      if (Math.max(...last) - Math.min(...last) < 0.7){ this.emitted = true; this.cb(medianOf(last)); }
-    }
-  }
-};
-
-/* =====================================================================
    TRAIN MODE
    ===================================================================== */
 const $ = id => document.getElementById(id);
@@ -1080,10 +1000,8 @@ const resTempo = () => (S.settings.resTempo || 1) * gentle();
 const ev = (notes, dur, vel, spd) => ({ notes: Array.isArray(notes) ? notes : [notes], dur: dur / (spd || noteTempo()), vel });
 const cadenceEvents = (k, oct=0, scale='major') => { const cs = cadence(k, oct, LEVELS[S.current].cad || S.settings.cadenceType || 'I-IV-V-I', scale); return cs.map((c,i) => ev(c, i === cs.length - 1 ? 1.25 : 0.72, c.length === 1 ? 0.78 : 0.62, cadenceTempo())); };
 
-// While the microphone is listening (singing levels), the app stays deaf to its own piano.
 async function playCadence(key, token, oct=0, scale='major'){
-  if (Sing.on) Sing.hold(1e7);
-  try { await A.seq(cadenceEvents(key, oct, scale), token); } finally { if (Sing.on) Sing.hold(450); }
+  await A.seq(cadenceEvents(key, oct, scale), token);
 }
 // Timing of a question's sound: when its last tone starts, and when it all ends (milliseconds from now)
 function qTiming(q){
@@ -1095,8 +1013,7 @@ function qTiming(q){
 }
 // asAnswer: for a phrase heard in one key and played back in another, replay it as it should have been played (in the answer's key)
 async function playQuestionNotes(q, token, onStep, asAnswer){
-  if (Sing.on) Sing.hold(1e7);
-  try {
+  {
     const notes = !asAnswer && q.heard ? q.heard : q.midi;
     if (q.kind === 'rhythm'){ const beat = 60 / q.bpm; await A.seq(q.rhythm.map((d,i) => ev(q.midi[i], d*beat, 0.85, 1)), token, onStep); }
     else if (q.sound) await A.seq(q.sound.map(n => ev(n, q.soundDur || 1.3, 0.8, noteTempo())), token, onStep);
@@ -1106,7 +1023,7 @@ async function playQuestionNotes(q, token, onStep, asAnswer){
       await A.seq(evs, token, onStep);
     }
     else { const d = q.len === 1 ? 1.1 : 0.62; await A.seq(notes.map(m => ev(m, d, 0.85, noteTempo())), token, onStep); }
-  } finally { if (Sing.on) Sing.hold(450); }
+  }
 }
 // With lightPad, the number pad lights up in step with the notes: 1 2 3 4 on the top row resolve right to left,
 // 5 6 7 and the upper 1 on the bottom row resolve left to right.
@@ -1130,9 +1047,9 @@ async function playResolution(s, key, token, lightPad, scale='major', alt=0){
 
 // How answers are given: the number pad or the on-screen keyboard. 'level' follows the level; the toggle on the
 // training screen (or Settings) overrides it on every level. Singing and tapping levels always use their own input.
-function inputFor(L){ if (L.input === 'sing' || L.input === 'tap' || L.xpose) return L.input; const a = S.settings.answerWith; return a === 'pad' ? 'numbers' : a === 'piano' ? 'piano' : L.input; }
+function inputFor(L){ if (L.input === 'tap' || L.xpose) return L.input; const a = S.settings.answerWith; return a === 'pad' ? 'numbers' : a === 'piano' ? 'piano' : L.input; }
 const ansKey = q => q.key2 != null ? q.key2 : q.key;   // the key an answer is given in (differs from the heard key when you replay a phrase in another key)
-const midiIn = q => q.input === 'piano' || q.input === 'sing';   // answers that arrive as a pitch, not a label
+const midiIn = q => q.input === 'piano';   // answers that arrive as a pitch, not a label
 function updateInputBtn(usePiano){ const b = $('bInput'); if (b) b.textContent = usePiano ? '🎹 Keys' : '123 Pad'; }
 function toggleInput(){
   const nowPiano = (T.q ? T.q.input : inputFor(LEVELS[S.current])) === 'piano';
@@ -1144,13 +1061,12 @@ function toggleInput(){
   toast(S.settings.answerWith === 'piano' ? 'Answering on the keyboard' : 'Answering on the number pad');
 }
 function renderPad(q){
-  const pad = $('tPad'), piano = $('tPiano'), sing = $('tSing'), tap = $('tTap');
+  const pad = $('tPad'), piano = $('tPiano'), tap = $('tTap');
   const cur = LEVELS[S.current], mode = q ? q.input : inputFor(cur);
   updateInputBtn(mode === 'piano');
-  $('bInput').classList.toggle('hidden', mode === 'sing' || mode === 'tap' || !!(q ? LEVELS[q.lvl] : cur).xpose);
+  $('bInput').classList.toggle('hidden', mode === 'tap' || !!(q ? LEVELS[q.lvl] : cur).xpose);
   pad.classList.toggle('hidden', mode !== 'numbers'); piano.classList.toggle('hidden', mode !== 'piano');
-  sing.classList.toggle('hidden', mode !== 'sing'); tap.classList.toggle('hidden', mode !== 'tap');
-  if (mode === 'sing'){ if (!q){ $('sNote').textContent = '🎤'; $('sSub').textContent = 'You will sing the notes back'; $('sMeter').style.width = '0'; } return; }
+  tap.classList.toggle('hidden', mode !== 'tap');
   if (mode === 'piano'){ renderPiano(q ? ansKey(q) : (T.roundKey || 0), q); return; }
   if (mode !== 'numbers') return;
   const scale = q ? q.scale : (cur.scales.includes(T.roundScale) ? T.roundScale : cur.scales[0]);
@@ -1221,25 +1137,15 @@ function promptFor(q){
 
 async function nextQuestion(){
   kill(T.token); kill(T.aux); A.stopAll(); const token = T.token = newToken();
-  Sing.end();
   const q = makeQuestion(); T.q = q; T.ans = []; T.results = null;
   T.phase = 'playing';
   $('bGo').classList.add('hidden'); $('bCompare').disabled = true; $('bGiveUp').disabled = true;
   setKeyLabel(q.key, q.scale); if (q.kind === 'rhythm' && q.rhy === 'tap') $('tKey').innerHTML = `<b>♩ = ${q.bpm}</b>`;
   setChip(q); renderPad(q); renderSlots(q); lockPad(true);
   // VOICE: the first time, the mic takes a moment to switch on and iOS changes audio mode; do that before any sound (even the cadence)
-  const vr = q.kind === 'sing' ? (voiceStop(), null) : voiceListen();
+  const vr = voiceListen();
   if (vr){ setMsg('Getting the microphone ready…', ''); await vr; if (token.dead) return; await wait(500, token); if (token.dead) return;
     try { if (A.ctx && A.ctx.state !== 'running') await A.ctx.resume(); } catch(e){} }
-  if (q.kind === 'sing'){
-    setMsg('Getting the microphone ready…', '');
-    const ok = await Sing.start(); if (token.dead) return;
-    if (!ok){
-      T.phase = 'idle'; setMsg('The microphone isn’t available', 'Allow the microphone for this app (iPhone Settings → Safari → Microphone), then tap Start again', 'bad');
-      $('bGo').textContent = 'Start'; $('bGo').classList.remove('hidden'); return;
-    }
-    await wait(300, token); if (token.dead) return;
-  }
   const needCad = q.cadence !== false && (q.key !== T.cadKey || q.oct !== T.cadOct || q.scale !== T.cadScale || T.sinceCad >= (S.settings.cadenceEvery || 999));
   if (needCad){
     const newKey = T.cadKey !== null && q.key !== T.cadKey, newScale = T.cadScale !== null && q.scale !== T.cadScale;
@@ -1250,7 +1156,6 @@ async function nextQuestion(){
   }
   if (q.cadence !== false) T.sinceCad++;
   if (q.kind === 'rhythm'){ await rhythmRound(q, token); return; }
-  if (q.kind === 'sing'){ await singRound(q, token); return; }
   if (q.key2 != null){
     // Play the phrase in one key, then set a new key and ask for the same phrase there
     setMsg('Listen…', `Keep its shape in mind: up, down or the same`);
@@ -1276,20 +1181,6 @@ async function nextQuestion(){
 }
 function lockPad(on){ $('tPad').classList.toggle('locked', on); }
 
-// Singing back: the notes play, then the microphone listens for steady sung notes (any octave counts).
-async function singRound(q, token){
-  setMsg(q.len === 1 ? 'Listen…' : `Listen to all ${q.len} notes…`, '');
-  $('sNote').textContent = '♪'; $('sSub').textContent = 'Listen first'; $('sMeter').style.width = '0';
-  T.qEnd = performance.now() + qTiming(q).total;
-  await playQuestionNotes(q, token); if (token.dead) return;
-  setMsg(q.len === 1 ? 'Sing it' : `Sing the ${q.len} notes`, 'Hold each note steady for a moment');
-  $('sNote').textContent = '🎤'; $('sSub').textContent = q.len === 1 ? 'Sing the note you heard' : 'One steady note at a time';
-  T.phase = 'answering'; T.voiceOpen = T.start = performance.now(); $('bGiveUp').disabled = false;
-  Sing.begin(m => { if (T.phase === 'answering' && T.q === q){ onAnswer({ midi: Math.round(m), at: performance.now() }); $('sSub').textContent = T.ans.length < q.len ? `${T.ans.length} of ${q.len} heard` : 'Got it'; } },
-    lv => { $('sMeter').style.width = Math.round(lv*100) + '%'; });
-  await wait((8 + 1.6*q.len)*1000, token);
-  if (!token.dead && T.phase === 'answering' && T.q === q){ while (T.phase === 'answering' && T.ans.length < q.len) onAnswer({ midi:null, at: performance.now() }); }
-}
 // Rhythm: four clicks, the pattern, four clicks again, then you tap (or play) it back. Only the spacing between your taps is judged.
 async function rhythmRound(q, token){
   const beat = 60 / q.bpm, clicks = n => Array.from({length:n}, (_,i) => ({ notes:[], click:true, accent:i === 0, dur:beat, vel:0 }));
@@ -1339,7 +1230,7 @@ function answeredText(q){
 }
 
 async function grade(){
-  const q = T.q; T.phase = 'feedback'; lockPad(true); $('bGiveUp').disabled = true; Sing.end();
+  const q = T.q; T.phase = 'feedback'; lockPad(true); $('bGiveUp').disabled = true;
   const isRhy = q.kind === 'rhythm', statsOn = !(isRhy && q.rhy === 'tap');
   const lastAt = T.ans.length ? T.ans[T.ans.length-1].at : 0, t = isRhy ? 0 : Math.max(0, (lastAt || performance.now()) - T.start);
   kill(T.aux);
@@ -1481,7 +1372,7 @@ async function compare(){
 }
 async function giveUp(){
   if (T.phase !== 'answering' || !T.q) return;
-  const q = T.q; T.phase = 'feedback'; lockPad(true); Sing.end();
+  const q = T.q; T.phase = 'feedback'; lockPad(true);
   $('bGiveUp').disabled = true; $('bCompare').disabled = true;
   kill(T.token); kill(T.aux); A.stopAll(); clearVoicePending();
   const res = q.labels.map(() => false); T.results = res;
@@ -1713,7 +1604,7 @@ function showView(v){
 function resetTrainIdle(){
   if (typeof SY !== 'undefined' && localChanged()) syncSoon();
   setTimeout(applyUpdateIfIdle, 300);
-  Sing.stop(); T.q = null; T.ans = []; renderSlots(null); setChip(null); lockPad(true); renderPad(null);
+  T.q = null; T.ans = []; renderSlots(null); setChip(null); lockPad(true); renderPad(null);
   setMsg('Ready', 'Tap Start to begin'); $('bGo').textContent = 'Start'; $('bGo').classList.remove('hidden');
   $('bCompare').disabled = true; $('bGiveUp').disabled = true; T.cadKey = null; T.cadOct = null; T.sinceCad = 99;
 }
@@ -2193,14 +2084,8 @@ document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest
   if (e.target.id === 'vLogBtn'){ const o = $('vLogOut'); o.classList.remove('hidden'); const f = d => { const x = new Date(d); return String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')+':'+String(x.getSeconds()).padStart(2,'0'); };
     o.textContent = VOICE.log.length ? VOICE.log.slice(-14).map(l => `${f(l.t)}  “${l.text}”${l.fin ? '' : ' …'}  ${l.action}`).join('\n') : 'Nothing heard yet. Turn on Answer by voice and practice a few questions.'; } });
 document.addEventListener('visibilitychange', () => { if (document.hidden) voiceStop(); else if (T.phase === 'answering') voiceListen(); });
-// Singing: the microphone is let go while the app is in the background and picked up again when it returns
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden){ if (Sing.on){ Sing.stop(); } return; }
-  if (T.q && T.q.kind === 'sing' && T.phase === 'answering'){ const cb = Sing.keepCb, lv = Sing.keepLv; Sing.start().then(ok => { if (ok && cb && T.phase === 'answering') Sing.begin(cb, lv); }); }
-});
-
 function goToStartScreen(){
-  kill(T.token); kill(T.aux); T.phase = 'idle'; voiceStop(); Sing.stop();   // VOICE
+  kill(T.token); kill(T.aux); T.phase = 'idle'; voiceStop();   // VOICE
   A.release();
   showView('train'); resetTrainIdle();
 }

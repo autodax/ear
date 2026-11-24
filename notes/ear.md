@@ -21,7 +21,8 @@ to melodic dictation.
 ## Decisions (Steve's)
 
 - Answers as numbers 1–7, never solfège. The number pad shows 1 2 3 4 / 5 6 7 1 (upper 1 counts as 1).
-- Major keys through the whole ladder (single notes, phrases, chromatic notes, chords, sing-back, rhythm); other modes are a Settings choice with their own mastery (Steve, Nov 23 2026).
+- Major keys through the whole ladder (single notes, phrases, chromatic notes, chords, rhythm); other modes are a Settings choice with their own mastery (Steve, Nov 23 2026).
+- No singing (Nov 24 2026): Steve had the four Sing back levels and the whole microphone-pitch feature removed; it did not help him learn scale degrees. Old progress for those levels stays in saved files (kept as unknown ids). Voice answers (speaking the number) are a separate feature and stay.
 - Resolution goes to the nearest tonic: 1–4 step down, 5–7 step up.
   The number pad lights up in step with the resolving notes: top row (1 2 3 4) right to left, bottom row (5 6 7 and the upper 1) left to right. On the keyboard the resolving keys light the same way (the keys shown always include 1 and the upper 1 and every note the question and resolution play, so the heard note is always tappable; `pianoWindow()`).
 - The key stays fixed for a round of questions (no "new key every note"). Round length is
@@ -61,10 +62,10 @@ to melodic dictation.
 
 ## Level ladder (LEVELS in index.html)
 
-41 levels, listed in teaching order. Every level has a permanent `id`; saved progress is filed under the id (never the list position), so levels can be added, moved or retired freely. Never reuse an id for a different level. `LADDER` (now 2) is the version of the whole ladder: a file saved under an older ladder is archived (`S.archive`) and the new ladder starts fresh. `levelNo(i)` gives the number shown to Steve.
+37 levels, listed in teaching order. Every level has a permanent `id`; saved progress is filed under the id (never the list position), so levels can be added, moved or retired freely. Never reuse an id for a different level. `LADDER` (now 2) is the version of the whole ladder: a file saved under an older ladder is archived (`S.archive`) and the new ladder starts fresh. `levelNo(i)` gives the number shown to Steve.
 
 Steve's decisions (Nov 23 2026):
-- No keyboard-only levels. The 123 / Keys button (setting `answerWith`) works on every level except sing and tap; the default is the number pad.
+- No keyboard-only levels. The 123 / Keys button (setting `answerWith`) works on every level except tap; the default is the number pad.
 - The whole progression is taught in major first. Modes are a separate setting (Settings → Mode: major, minor, Dorian, Mixolydian, Lydian, Phrygian). The same ladder is then heard and named in that mode, and each mode starts its own mastery from scratch.
 
 How modes are stored: `S.mode` is the active mode; the progress fields `current, mastered, pending, lvDays, hist, levelDeg, deg, conf` (and `xtra`) at the top level always belong to the active mode, and the other modes' copies wait in `S.modeStore`. `switchMode()` swaps them. Level `scales`/`degrees` are computed from the mode (`modeScale()`); levels list scale steps (`idx`) rather than labels. Modes (`MODE_ORDER`): Major (Ionian), Dorian, Phrygian, Lydian, Mixolydian, Minor (Aeolian), Locrian (added Nov 23 2026 at Steve's request; Locrian is the seventh mode, with ♭2 ♭3 ♭5 ♭6 ♭7; its home chord is diminished). Chromatic levels add "outside notes" for the mode (`outs`, order in `OUT_ORDER`, labels by semitone via `chromaLabels()`): in major that is ♯4 ♭7 then ♭3 ♭6 then ♭2. Chord levels build the chord from the mode's own notes. Car mode stays in major. Not checked by ear: how the cadence sounds in Lydian, Mixolydian, Phrygian and Locrian (`cadence()`), and that chords in each mode sound right.
@@ -79,9 +80,9 @@ Numbers below are the numbers shown in the app (list order). Steve's request (No
    Steve's decision (Nov 22 2026): other keys come in early so the ear never leans on C. Level 1 stays in C; level 2 uses C, G, F; level 3 adds D and B♭ (`KEYS_B`); level 4 adds A and E♭ (`KEYS_C`). The key still changes per round.
 12. New key every round (all 12) · 13. Three octaves, new key every round
 14–15. Two- and three-note phrases on 1 3 5 in any key (added at Steve's request, Nov 24 2026, before the all-seven-degree versions) · 16–20. Two-, three-, four-, five-, six-note phrases
-Then: chromatic (one outside note, then first two, two more, all twelve, 3-note phrases; 12-button pad, voice off), chords (roots 1 and 5, roots 1 4 5, every chord, inversions, arpeggios, block chords on 1 4 5, block chords), sing back (1 3 5, pentatonic, all seven, 3-note phrases; microphone, YIN `detectPitch`, any octave), rhythm (tap, off-beats, melody with rhythm in 2, 3, 5 notes; graded on the gaps between taps, tolerance `tol`).
+Then: chromatic (one outside note, then first two, two more, all twelve, 3-note phrases; 12-button pad, voice off), chords (roots 1 and 5, roots 1 4 5, every chord, inversions, arpeggios, block chords on 1 4 5, block chords), rhythm (tap, off-beats, melody with rhythm in 2, 3, 5 notes; graded on the gaps between taps, tolerance `tol`).
 
-Tolerances, `limitMult` (speed limit multiplier: 1.25 to 3 on harder levels, 0 = no speed test on rhythm) and the key pools are my choices, not Steve's. Sing and rhythm levels have NOT been tried on his phone yet (microphone permission, audio mode, tap timing); expect tuning.
+Tolerances, `limitMult` (speed limit multiplier: 1.25 to 3 on harder levels, 0 = no speed test on rhythm) and the key pools are my choices, not Steve's. Rhythm levels have NOT been tried on his phone yet (tap timing); expect tuning.
 
 Mastery (rule in "Making learning stick" below): enough recent answers at the target accuracy, two days, plus every degree ≥75% recently,
 typical correct answer under the speed limit (2 s from the start of the tone by default, adjustable). About 30% of questions
@@ -102,7 +103,7 @@ No head-to-head study of "best" scale-degree progressions exists. What is known:
 - Relative pitch and scale-degree hearing are the right target; researchers argue it gets too little
   emphasis next to absolute pitch.
 - Teachers' practice (surveys, not tests): simple to complex, stay on pentatonic material a long time,
-  teach scale-degree function, use familiar melodies, prepare by singing. Backs pentatonic-first and sing-back.
+  teach scale-degree function, use familiar melodies, prepare by singing. Backs pentatonic-first.
 - Isolated intervals: no strong support. Researchers noted decades ago that ear training studied
   intervals outside context although context changes how they are heard (Shatzkin 1981; Wapnick et al. 1982;
   Telesco, "Contextual Ear Training", J. Music Theory Pedagogy). Interval learning is trainable and
@@ -161,17 +162,17 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
 - Functional Ear Trainer features Steve wants to compare against: auto-advance choices (after correct / mistake / giving up) and octave markers on answers. (Keyboard input on any level, cadence styles, resolution styles, separate cadence/notes/resolution speeds, and the Give up button are built.)
 - Keyboard levels: whether to require the exact octave, and a landscape keyboard with about
   three octaves. Steve will decide when he reaches the keyboard levels.
-- Tune sing-back and rhythm after Steve tries them on the phone. Possible later: other chord qualities, 7th chords, rhythm in dictation with sung answers.
+- Tune rhythm after Steve tries them on the phone. Possible later: other chord qualities, 7th chords.
 
 ## Making learning stick (built Nov 23 2026; Steve asked for all four)
 
 Steve felt he moved from phrase levels to melodies, and to the keyboard, too fast. The numbers and rules here are my choices.
 1. **Mastery needs more, on two days.** The last 30 answers (20 for multi-note levels) must hit the target accuracy (90%, or 80% for multi-note) with the speed and per-note checks. That makes the level "ready" (`S.pending[lvl]` = the date, "Strong session!" popup). It counts as mastered only when the target is met again on a later day, with at least a third of the window answered that day. Levels already mastered before this change stay mastered. Pending levels still feed the shared stats and are skipped when picking "Up next".
 2. **Stepping stones** between the big jumps (now ordinary levels in the list; see the ladder). The keyboard needs no stone any more, since it is an option on every level. A new mode is its own Mode setting.
-3. **Review of the level before.** A level in its first three practice days (`isYoung`, from `S.lvDays`) mixes in about a third review, mostly from the level just before it (notes and chords may mix; sing and rhythm only mix with their own kind). Only when the review setting is above 0.
+3. **Review of the level before.** A level in its first three practice days (`isYoung`, from `S.lvDays`) mixes in about a third review, mostly from the level just before it (notes and chords may mix; rhythm only mixes with its own kind). Only when the review setting is above 0.
 4. **Gentle start.** In those first three days notes and resolutions play 20% slower (`gentle()`) and the header says so. Replays were already free. Levels already well under way (20+ answers) before this change are not treated as new.
 
 
 - Progress note bars (Steve chose option B, Nov 24 2026): periwinkle `#b4b9ff` at 90%+, `#7f86e8` at 70–89%, the app's orange below 70%.
 
-- Level names (Nov 24 2026, my wording, Steve asked for consistent names): `Category: detail`. Categories are Single notes, Phrases, Rhythm phrases, Phrases over a chord, Another key, Chromatic, Chord roots, Chord tones, Sing back, Tap the rhythm, Melody with rhythm. Counts are spelled out (two notes), degrees as digits (1 3 5).
+- Level names (Nov 24 2026, my wording, Steve asked for consistent names): `Category: detail`. Categories are Single notes, Phrases, Rhythm phrases, Phrases over a chord, Another key, Chromatic, Chord roots, Chord tones, Tap the rhythm, Melody with rhythm. Counts are spelled out (two notes), degrees as digits (1 3 5).
