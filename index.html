@@ -165,6 +165,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.7}}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;z-index:40;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.on{opacity:1}
+.gonote{text-align:center;color:var(--dim);font-size:15px;min-height:20px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -206,6 +207,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
       <button class="tapbtn hidden" id="tTap">Tap</button>
       <div class="piano hidden" id="tPiano"></div>
       <button class="go" id="bGo">Start</button>
+      <div class="gonote" id="goNote"></div>
     </section>
 
     <!-- CAR -->
@@ -257,7 +259,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.3';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.4';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1548,7 +1550,7 @@ function showBreak(){
   modal({ icon:'☕', title:'Time for a break', 
     text:`You’ve been at it for about ${mins} minutes. Short sessions, spread through the day, work better than one long one.`,
     buttons:[
-      {label:'Take a break', fn: () => { T.workStart = 0; T.lastAnsAt = 0; resetTrainIdle(); toast('Nice work. Progress is saved.'); goToStartScreen(); }},
+      {label:'Take a break', fn: () => { T.workStart = 0; T.lastAnsAt = 0; resetTrainIdle(); trainNote('Nice work. Progress is saved.'); goToStartScreen(); }},
       {label:'Keep going', ghost:true, fn: () => { T.workStart = Date.now(); nextQuestion(); }}
     ]});
 }
@@ -1560,7 +1562,7 @@ function showGoalReached(){
     buttons:[
       ...(due ? [{label:'Back up progress', fn: () => exportProgress().then(() => showGoalReachedAfter())}] : []),
       {label:'Keep going', ghost: due, fn: () => nextQuestion()},
-      {label:'Done for today', ghost:true, fn: () => { resetTrainIdle(); toast('Nice work. Progress is saved.'); goToStartScreen(); }}
+      {label:'Done for today', ghost:true, fn: () => { resetTrainIdle(); trainNote('Nice work. Progress is saved.'); goToStartScreen(); }}
     ]});
 }
 function showGoalReachedAfter(){
@@ -1713,6 +1715,8 @@ function resetTrainIdle(){
   setMsg('Ready', 'Tap Start to begin'); $('bGo').textContent = 'Start'; $('bGo').classList.remove('hidden');
   $('bCompare').disabled = true; $('bGiveUp').disabled = true; T.cadKey = null; T.cadOct = null; T.sinceCad = 99;
 }
+// A short note under the Start button (used when a session ends), instead of a floating pop-up
+function trainNote(t){ const el = $('goNote'); el.textContent = t; clearTimeout(trainNote.id); trainNote.id = setTimeout(() => { el.textContent = ''; }, 8000); }
 function toast(t){ const el = $('toast'); el.textContent = t;
   // sit just above the tab bar, clear of the Start button
   const navTop = $('nav').getBoundingClientRect().top; el.style.top = 'auto'; el.style.bottom = Math.max(12, innerHeight - navTop + 10) + 'px'; el.classList.add('on'); clearTimeout(toast.id); toast.id = setTimeout(() => el.classList.remove('on'), 2200); }
@@ -1825,7 +1829,7 @@ function renderProgress(){
    EVENTS
    ===================================================================== */
 $('nav').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showView(b.dataset.v); });
-$('bGo').addEventListener('click', () => { A.engage(); nextQuestion(); });
+$('bGo').addEventListener('click', () => { $('goNote').textContent = ''; A.engage(); nextQuestion(); });
 function auxToken(){ kill(T.aux); A.stopAll(); return T.aux = newToken(); }
 $('bReplay').addEventListener('click', async () => {
   if (!T.q || T.phase === 'playing' || T.phase === 'idle') return;
@@ -1841,7 +1845,7 @@ $('bCadence').addEventListener('click', async () => {
 $('bGiveUp').addEventListener('click', giveUp);
 $('bCompare').addEventListener('click', compare);
 $('bInput').addEventListener('click', toggleInput);
-$('bStop').addEventListener('click', () => { kill(T.token); kill(T.aux); A.stopAll(); T.phase = 'idle'; resetTrainIdle(); updateHeader(); toast('Stopped. Progress is saved.'); goToStartScreen(); });
+$('bStop').addEventListener('click', () => { kill(T.token); kill(T.aux); A.stopAll(); T.phase = 'idle'; resetTrainIdle(); updateHeader(); trainNote('Stopped. Progress is saved.'); goToStartScreen(); });
 $('tPad').addEventListener('pointerdown', e => { const b = e.target.closest('.deg'); if (!b) return; e.preventDefault(); T.tapped = b; onAnswer({ label: b.dataset.d }); });
 $('tTap').addEventListener('pointerdown', e => { e.preventDefault(); onAnswer({ tap:true, at: e.timeStamp || performance.now() }); });
 $('tPiano').addEventListener('pointerdown', e => {
