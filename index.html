@@ -259,7 +259,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.4';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.5';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1810,7 +1810,7 @@ function renderProgress(){
   let bars = '';
   [...ALL7, ...['♭2','♭3','♯4','♭5','♭6','♭7'].filter(d => S.deg[d] && S.deg[d].r.length)].forEach(d => { const st = S.deg[d]; const a = st ? accOf(st.r.slice(-20)) : null;
     const tm = st && st.t.length ? (st.t.slice().sort((x,y)=>x-y)[Math.floor(st.t.length/2)]/1000).toFixed(1)+'s' : '–';
-    bars += `<div class="d">${d}</div><div class="b"><i style="width:${a===null?0:a*100}%;background:${a===null?'':a>=.9?'var(--good)':a>=.7?'var(--accent)':'var(--bad)'}"></i></div><div class="p">${a===null?'–':(a*100).toFixed(0)+'%'}</div><div class="tm">${tm}</div>`; });
+    bars += `<div class="d">${d}</div><div class="b"><i style="width:${a===null?0:a*100}%;background:${a===null?'':a>=.9?'#b4b9ff':a>=.7?'#7f86e8':'var(--bad)'}"></i></div><div class="p">${a===null?'–':(a*100).toFixed(0)+'%'}</div><div class="tm">${tm}</div>`; });
   const confs = topConfusionPairs(6);
   $('v-prog').innerHTML = `
     <div class="stats" style="margin-top:6px">

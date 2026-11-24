@@ -171,3 +171,5 @@ Steve felt he moved from phrase levels to melodies, and to the keyboard, too fas
 3. **Review of the level before.** A level in its first three practice days (`isYoung`, from `S.lvDays`) mixes in about a third review, mostly from the level just before it (notes and chords may mix; sing and rhythm only mix with their own kind). Only when the review setting is above 0.
 4. **Gentle start.** In those first three days notes and resolutions play 20% slower (`gentle()`) and the header says so. Replays were already free. Levels already well under way (20+ answers) before this change are not treated as new.
 
+
+- Progress note bars (Steve chose option B, Nov 24 2026): periwinkle `#b4b9ff` at 90%+, `#7f86e8` at 70–89%, the app's orange below 70%.
