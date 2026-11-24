@@ -177,3 +177,4 @@ Steve felt he moved from phrase levels to melodies, and to the keyboard, too fas
 - Progress note bars (Steve chose option B, Nov 24 2026): periwinkle `#b4b9ff` at 90%+, `#7f86e8` at 70–89%, the app's orange below 70%.
 
 - Level names (Nov 24 2026, my wording, Steve asked for consistent names): `Category: detail`. Categories are Single notes, Phrases, Rhythm phrases, Phrases over a chord, Another key, Chromatic, Chord roots, Chord tones, Tap the rhythm, Melody with rhythm. Counts are spelled out (two notes), degrees as digits (1 3 5).
+- Another-key levels (7, 8): cadence in the heard key, the phrase, then straight to your answer in the new key. Steve (Nov 24 2026) found a second cadence in the new key made him forget the phrase, so it was removed; the new key is only named on screen.

@@ -253,7 +253,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.9';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.10';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -380,7 +380,7 @@ const LEVELS = [
   {id:'feel-2-135', title:'Rhythm phrases: two notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', feel:FEEL2, cad:'I-V-I'},
   {id:'feel-3-135', title:'Rhythm phrases: three notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', feel:FEEL3, cad:'I-V-I'},
   {id:'harm-135', title:'Phrases over a chord: 1 3 5', desc:'A chord sounds under the phrase, so you hear it against home · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'numbers', feel:FEEL3, under:true, cad:'I-IV-V-I'},
-  {id:'xpose-2-135', title:'Another key: two notes, 1 3 5', desc:'Hear a phrase, then play it on the keyboard in a new key. You also get feedback on its shape: up, down or the same · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:2, input:'piano', xpose:true, feel:FEEL2, noSpeed:true, cad:'I-IV-V-I'},
+  {id:'xpose-2-135', title:'Another key: two notes, 1 3 5', desc:'Hear a phrase, then play it on the keyboard in a new key (no second cadence, so the phrase stays fresh). You also get feedback on its shape: up, down or the same · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:2, input:'piano', xpose:true, feel:FEEL2, noSpeed:true, cad:'I-IV-V-I'},
   {id:'xpose-3-135', title:'Another key: three notes, 1 3 5', desc:'The same, with three-note phrases · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'piano', xpose:true, feel:FEEL3, noSpeed:true, cad:'I-IV-V-I'},
   // ---- Filling in the scale, then the same ladder in every key
   {id:'pentatonic', title:'Single notes: add 2 and 6', desc:() => `${lbl(modeScale(), [0,1,2,4,5]).join(' ')} · keys C, G and F. No 4th or 7th note yet`, idx:[0,1,2,4,5], range:R1, keys:KEYS_A, len:1, input:'numbers'},
@@ -1162,10 +1162,7 @@ async function nextQuestion(){
     await playQuestionNotes(q, token); if (token.dead) return;
     await wait(500, token); if (token.dead) return;
     setKeyLabel(q.key2, q.scale);
-    setMsg(`Now in ${keyTitle(q.key2, q.scale)}`, 'Listen to the new key…');
-    await playCadence(q.key2, token, 0, q.scale); if (token.dead) return;
-    T.cadKey = q.key2; T.cadOct = 0; T.cadScale = q.scale; T.sinceCad = 0;
-    await wait(380, token); if (token.dead) return;
+    // No second cadence: it would blur the phrase you are trying to hold in your head
     setMsg(`Play it in ${KEYS[q.key2].name}`, `The same ${q.len} notes, now starting from this key`);
     T.phase = 'answering'; lockPad(false); $('bGiveUp').disabled = false;
     T.start = performance.now(); T.qEnd = T.start;
