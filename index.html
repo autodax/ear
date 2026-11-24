@@ -256,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.19';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.20';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1320,7 +1320,7 @@ async function grade(){
     await playQuestionNotes(q, token, q.len > 1 ? i => highlightSlot(i) : undefined, true); if (token.dead) return;
     if (q.len > 1) highlightSlot(-1);
     await wait(250, token); if (token.dead) return;
-  } else if (isPhrase(q)){   // phrases: after a right answer the phrase plays once more, with no resolution
+  } else if (noResolve(q) && !(isRhy && q.rhy === 'tap')){   // phrases, chords and melodies: after a right answer it plays once more, with no resolution
     await wait(250, token); if (token.dead) return;
     await playQuestionNotes(q, token, i => highlightSlot(i), true); if (token.dead) return;
     highlightSlot(-1);
