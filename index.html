@@ -69,7 +69,9 @@ nav button.on{color:var(--accent)}
 .slot.ok{background:rgba(191,227,255,.16);color:var(--good)}
 .slot.no{background:rgba(217,137,90,.18);color:var(--bad)}
 .slot.hl{border-color:var(--accent)}
-.slot.given{background:transparent;border:2px dashed var(--line);color:var(--accent)}
+.slot.given{background:transparent;border:2px dashed var(--line);color:var(--accent);opacity:.7}
+.slot.given.cur{border-color:var(--accent);opacity:1}
+.slot.given.done{background:rgba(127,134,232,.3);border:2px solid var(--accent);color:var(--text);opacity:1}
 .slot small{font-size:11px;font-weight:600;color:var(--text);opacity:.85}
 .tools{display:flex;gap:6px;margin-top:12px}
 .tool{flex:1;background:var(--panel2);border-radius:10px;padding:10px 2px;font-size:13px;color:var(--dim);white-space:nowrap}
@@ -254,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.15';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.16';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1122,7 +1124,7 @@ function renderSlots(q, results){
   let h = '';
   for (let i=0;i<q.len;i++){
     const a = T.ans[i]; let cls = 'slot', txt = '', sub = '';
-    if (q.given.includes(i)){ h += `<div class="slot given" data-i="${i}">${q.labels[i]}</div>`; continue; }
+    if (q.given.includes(i)){ h += `<div class="slot given${a ? ' done' : i === nextSlot(q) ? ' cur' : ''}" data-i="${i}">${q.labels[i]}</div>`; continue; }
     if (a !== undefined) txt = q.input === 'tap' ? '•' : midiIn(q) ? (a.midi == null ? '–' : noteName(a.midi, ansKey(q))) : a.label;
     if (results){ cls += results[i] ? ' ok' : ' no';
       if (!results[i]) sub = midiIn(q) ? noteName(q.midi[i], ansKey(q)) : q.labels[i]; }
@@ -1142,18 +1144,13 @@ function setChip(q){
 // What to ask for, in words
 function promptFor(q){
   if (q.kind === 'chord') return q.sound && q.len === 1 ? ['Name the chord’s root', 'The scale degree it is built on'] : q.sound ? ['Name its three notes', 'Lowest first'] : ['Name its three notes', 'In the order you hear them'];
-  if (q.given.length){
-    const list = a => a.length === 1 ? `${a[0]}` : a.slice(0,-1).join(', ') + ' and ' + a[a.length-1];
-    const shown = q.given.map(i => i+1), asked = q.labels.map((_,i) => i+1).filter(n => !shown.includes(n));
-    return [`What ${asked.length === 1 ? 'is note' : 'are notes'} ${list(asked)}?`, `Note${shown.length > 1 ? 's' : ''} ${list(shown)} ${shown.length > 1 ? 'are' : 'is'} already shown. Don't press ${shown.length > 1 ? 'them' : 'it'}`];
-  }
+  if (q.given.length) return [`Play all ${q.len} notes in order`, 'Some are shown to help: press those too'];
   return [q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : ''];
 }
 
 async function nextQuestion(){
   kill(T.token); kill(T.aux); A.stopAll(); const token = T.token = newToken();
   const q = makeQuestion(); T.q = q; T.ans = []; T.results = null;
-  q.given.forEach(i => { T.ans[i] = { label: q.labels[i], midi: q.midi[i], given: true }; });
   T.phase = 'playing';
   $('bGo').classList.add('hidden'); $('bCompare').disabled = true; $('bGiveUp').disabled = true;
   setKeyLabel(q.key, q.scale); if (q.kind === 'rhythm' && q.rhy === 'tap') $('tKey').innerHTML = `<b>♩ = ${q.bpm}</b>`;
@@ -1216,6 +1213,9 @@ function onAnswer(a){
   const q = T.q;
   if (a.at == null) a.at = performance.now();
   const at = nextSlot(q); if (at < 0) return;
+  // A note that is already shown must be pressed as shown (a wrong press there is ignored, not counted)
+  if (q.given.includes(at) && a.label !== q.labels[at]){ setMsg(promptFor(q)[0], `Note ${at+1} is shown: press ${q.labels[at]}`); return; }
+  if (q.given.includes(at)) a.given = true;
   T.ans[at] = a; renderSlots(q);
   if (q.input === 'numbers'){
     const b = T.tapped;
@@ -1223,7 +1223,7 @@ function onAnswer(a){
   }
   if (nextSlot(q) < 0) grade();
 }
-// The first note position still waiting for an answer (notes that are shown on screen count as answered); -1 when all are in
+// The first note position still waiting for a press; -1 when all are in
 function nextSlot(q){ for (let i = 0; i < q.len; i++) if (!T.ans[i]) return i; return -1; }
 
 // Per note: was the pitch (or number) right? And for rhythm questions: was the timing right?
