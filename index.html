@@ -256,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.16';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.17';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1316,9 +1316,13 @@ async function grade(){
     await playQuestionNotes(q, token, q.len > 1 ? i => highlightSlot(i) : undefined, true); if (token.dead) return;
     if (q.len > 1) highlightSlot(-1);
     await wait(250, token); if (token.dead) return;
+  } else if (q.given.length){   // stepping-stone phrase levels: after a right answer the phrase plays once more
+    await wait(250, token); if (token.dead) return;
+    await playQuestionNotes(q, token, i => highlightSlot(i), true); if (token.dead) return;
+    highlightSlot(-1);
   } else await wait(150, token);
   if (token.dead) return;
-  if (!(isRhy && q.rhy === 'tap')) await playResolution(q.pos[q.pos.length-1], ansKey(q), token, true, q.scale, q.alts[q.alts.length-1]);
+  if (!(isRhy && q.rhy === 'tap') && !q.given.length) await playResolution(q.pos[q.pos.length-1], ansKey(q), token, true, q.scale, q.alts[q.alts.length-1]);
   if (token.dead) return;
 
   // mastery
@@ -1418,14 +1422,14 @@ async function giveUp(){
   }
   if (isRhy && q.rhy === 'tap') setMsg(`The rhythm: ${q.labels.join(' ')}`, 'Listen to it again', 'bad');
   else if (q.len === 1) setMsg(`It was ${midiIn(q) ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, 'Listen to the note and resolution', 'bad');
-  else setMsg(`Answer: ${q.labels.join(' ')}`, 'Listen to the phrase and resolution', 'bad');
+  else setMsg(`Answer: ${q.labels.join(' ')}`, q.given.length ? 'Listen to the phrase' : 'Listen to the phrase and resolution', 'bad');
   const token = T.token = newToken();
   await wait(200, token); if (token.dead) return;
   await cadenceAfterMiss(q, token); if (token.dead) return;
   await playQuestionNotes(q, token, q.len > 1 ? i => highlightSlot(i) : undefined, true); if (token.dead) return;
   if (q.len > 1) highlightSlot(-1);
   await wait(250, token); if (token.dead) return;
-  if (!(isRhy && q.rhy === 'tap')){ await playResolution(q.pos[q.pos.length-1], ansKey(q), token, true, q.scale, q.alts[q.alts.length-1]); if (token.dead) return; }
+  if (!(isRhy && q.rhy === 'tap') && !q.given.length){ await playResolution(q.pos[q.pos.length-1], ansKey(q), token, true, q.scale, q.alts[q.alts.length-1]); if (token.dead) return; }
   updateHeader();
   if (S.days[today()] === S.settings.dailyGoal){ showGoalReached(); return; }
   if (breakDue()){ showBreak(); return; }
