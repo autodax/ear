@@ -1,13 +1,13 @@
 "use strict";
-const SW_VERSION = '2026-11-23.3';
+const SW_VERSION = '2026-11-24.2';
 const APP_CACHE = 'ear-app-' + SW_VERSION;
 const SAMPLE_CACHE = 'music-samples-v2';
 
 const APP_SHELL = [
   './',
   'manifest.json',
-  'icon-180.png?v=6',
-  'icon-512.png?v=6'
+  'icon-180.png?v=7',
+  'icon-512.png?v=7'
 ];
 
 // All 30 Salamander Grand Piano samples (MIDI 21..108, every 3 semitones)
