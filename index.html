@@ -253,7 +253,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.10';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.11';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -481,7 +481,7 @@ const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions p
    ===================================================================== */
 const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
-  cadenceEvery: 5, cadenceType: 'I-IV-V-I', resStyle: 'nearest', roundLen: 12, autoNext: true, showFeedback: true, speedLimit: 2, timingV3: 1, errorSound: true, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
+  cadenceEvery: 5, cadenceType: 'I-IV-V-I', resStyle: 'nearest', roundLen: 12, autoNext: true, timingV3: 1, errorSound: true, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
   tempo: 1, cadenceTempo: 1, noteTempo: 1, resTempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
@@ -542,8 +542,6 @@ let S = load();
 function normalize(s){
   s = fromFile(s);
   const f = freshState();
-  // Speed goal reset (Nov 2026): 2 seconds counted from the start of the tone is a good response.
-  if (s.settings && !s.settings.timingV3 && s.settings.speedLimit) s.settings.speedLimit = 2;
   // Carry over legacy single tempo setting if the three separate speeds aren't set yet
   if (s.settings && s.settings.tempo && s.settings.cadenceTempo === undefined){
     const leg = s.settings.tempo === 0.8 ? 0.75 : s.settings.tempo === 1.25 ? 1.3 : 1;
@@ -973,18 +971,14 @@ function masteryInfo(lvl){
   const n = h.length, ok = h.filter(x => x.ok);
   const acc = n ? ok.length/n : 0;
   const target = L.len === 1 ? 0.9 : 0.8;
-  const times = ok.map(x => x.t).sort((a,b)=>a-b);
-  const med = times.length ? times[Math.floor(times.length/2)] : Infinity;
-  const limit = (L.noSpeed || !S.settings.speedLimit) ? 0 : (L.len === 1 ? S.settings.speedLimit : S.settings.speedLimit * (0.6 + 0.55*L.len)) * (L.limitMult || 1);
-  const speedOk = !limit || med <= limit*1000;
   const degs = L.degrees.map(d => { const r = ((S.levelDeg[lvl]||{})[d]) || []; const a = accOf(r.slice(-6)); return {d, ok: r.length >= 4 && a >= 0.75}; });
   const degOk = degs.every(x => x.ok);
   // Hitting the target once makes the level "ready"; it counts as mastered only when it is hit again on a later day
-  const ready = n >= W && acc >= target && speedOk && degOk;
+  const ready = n >= W && acc >= target && degOk;
   const pend = S.pending[lvl] || null, needToday = Math.ceil(W/3), todayN = h.filter(x => x.d === today()).length;
   const mastered = !!(ready && pend && pend !== today() && todayN >= needToday);
-  const prog = Math.min(1, n/W)*0.35 + Math.min(1, acc/target)*Math.min(1,n/W)*0.4 + (degs.length ? degs.filter(x=>x.ok).length/degs.length : 1)*0.15 + (speedOk && n ? 0.1 : 0);
-  return { n, W, acc, target, med, limit, speedOk, degOk, degs, ready, pend, needToday, todayN, mastered, prog: mastered ? 1 : ready ? 0.95 : Math.min(prog, 0.9) };
+  const prog = Math.min(1, n/W)*0.35 + Math.min(1, acc/target)*Math.min(1,n/W)*0.4 + (degs.length ? degs.filter(x=>x.ok).length/degs.length : 1)*0.15 + (n ? 0.1 : 0);
+  return { n, W, acc, target, degOk, degs, ready, pend, needToday, todayN, mastered, prog: mastered ? 1 : ready ? 0.95 : Math.min(prog, 0.9) };
 }
 // A level just started gets a gentle first few days: slower notes and extra review of the level before it.
 function isYoung(lvl){ return S.mastered[lvl] === undefined && !S.pending[lvl] && (S.lvDays[lvl] || []).length < 3; }
@@ -1265,8 +1259,6 @@ async function grade(){
   // feedback
   renderSlots(q, res);
   $('tStreak').textContent = T.streak >= 3 ? `🔥 ${T.streak}` : '';
-  const secs = (t/1000).toFixed(1);
-  const lim = masteryInfo(lvl).limit;
   if (q.input === 'numbers' && q.len === 1){
     const btn = T.tapped;
     btn && btn.classList.add(ok ? 'flash-ok' : 'flash-no');
@@ -1280,7 +1272,7 @@ async function grade(){
     else if (ok) setMsg('Right notes, different shape', `Notes ✓ · ${shape}`, 'bad');
     else setMsg('Not quite', `Notes ${nOk} of ${q.len} · ${shape}<br>Correct: ${q.labels.join(' ')}`, 'bad');
   }
-  else if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), isRhy ? '' : S.settings.showFeedback !== false ? (lim && t > lim*1000 ? `Correct, but aim for under ${lim.toFixed(1)}s (${secs}s)` : `${secs}s`) : '', 'good');
+  else if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), '', 'good');
   else if (isRhy && q.rhy === 'tap') setMsg('Not quite', `The rhythm: ${q.labels.join(' ')}`, 'bad');
   else if (isRhy && pitchRes.every(Boolean)) setMsg('Right notes, rhythm was off', 'Listen to it again', 'bad');
   else if (q.len === 1) setMsg(`It was ${midiIn(q) ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, `You answered ${answeredText(q)} · tap Compare to hear both`, 'bad');
@@ -1580,7 +1572,7 @@ function updateHeader(){
     : m.pend && m.ready ? (m.pend === today() ? 'Strong work. Do it again on another day to lock it in' : `Confirming: ${Math.min(m.todayN, m.needToday)} of ${m.needToday} answers today`)
     : m.n < m.W ? `${m.n} of the ${m.W} answers toward mastery` : `Accuracy ${(m.acc*100).toFixed(0)}%, need ${(m.target*100)|0}%`;
   $('hBarR').textContent = done ? '' : m.n < m.W/2 ? (isYoung(S.current) ? 'Gentle start: slower practice' : '') : (!m.degOk ? 'needs work: ' + m.degs.filter(x=>!x.ok).map(x=>x.d).join(' ')
-    : (S.settings.showFeedback !== false && !m.speedOk && isFinite(m.med)) ? `speed ${(m.med/1000).toFixed(1)}s, goal ${m.limit.toFixed(1)}s` : '');
+    : '');
   const td = S.days[today()] || 0;
   $('hToday').textContent = td >= S.settings.dailyGoal ? `Answered today: ${td} · goal ✓` : `Answered today: ${td}/${S.settings.dailyGoal}`;
 }
@@ -1642,8 +1634,6 @@ function renderSettings(){
       ${optSelect('cadenceType','Cadence style','Chords or tonic used to establish the key', s.cadenceType || 'I-IV-V-I', [['I-IV-V-I','I-IV-V-I'],['I-V-I','I-V-I'],['V7-I','V7-I'],['ii7-V7-I','ii7-V7-I'],['I','I'],['IM7','IM7'],['several tonics','several tonics'],['tonic','tonic']])}
       ${optSelect('cadenceEvery','Cadence frequency','How often to replay the key (always on a key change)', s.cadenceEvery, [[1,'Every question'],[3,'Every 3 questions'],[5,'Every 5 questions'],[10,'Every 10 questions'],[0,'Only on key change']])}
       ${optSelect('resStyle','Resolution style','How each note resolves back to the tonic', s.resStyle || 'nearest', [['nearest','Nearest tonic, stepwise'],['down','Always down to 1'],['up','Always up to 1↑'],['thirds','Skip by thirds'],['jump','Jump straight to tonic'],['tonicFirst','Tonic first, then walk']])}
-      ${optToggle('showFeedback','Response timing','Show response time and speed nudges on correct answers', s.showFeedback !== false)}
-      ${optSelect('speedLimit','Speed for mastery','Typical correct answer must be this quick, counted from the start of the tone', s.speedLimit, [[0,'Off'],[1,'1 second'],[1.5,'1.5 seconds'],[2,'2 seconds'],[3,'3 seconds'],[4,'4 seconds'],[6,'6 seconds']])}
       ${optSelect('reviewPct','Review mix','Questions from earlier levels, for confidence', s.reviewPct, [[0,'None'],[10,'10%'],[20,'20%'],[30,'30%']])}
       ${optSelect('cadenceTempo','Cadence speed','', s.cadenceTempo || 1, [[0.75,'Slow'],[1,'Normal'],[1.3,'Fast'],[1.65,'Very fast']])}
       ${optSelect('noteTempo','Notes speed','', s.noteTempo || 1, [[0.75,'Slow'],[1,'Normal'],[1.3,'Fast'],[1.65,'Very fast']])}
@@ -1712,7 +1702,7 @@ function renderProgress(){
       : '<div class="row"><div class="sub">No repeated mix-ups yet. When you confuse two degrees, they’ll show here and get drilled more often.</div></div>'}</div>
     <h2>Scale degrees · last 20 · typical speed</h2><div class="card"><div class="degbars">${bars}</div></div>
     <h2>Levels</h2><div class="card">${lv}</div>
-    <p class="note">To master a level: ${m.W} recent answers at ${(m.target*100)|0}% or better, every degree at least 75% recently${S.settings.speedLimit ? `, and a typical correct answer under ${m.limit.toFixed(1)}s` : ''}.</p>`;
+    <p class="note">To master a level: ${m.W} recent answers at ${(m.target*100)|0}% or better, every degree at least 75% recently.</p>`;
 }
 
 /* =====================================================================
@@ -1773,7 +1763,6 @@ document.addEventListener('click', e => {
   if (tg){ const id = tg.dataset.tog;
     setPath(id, !getPath(id));
     if (id === 'voiceOn'){ try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} if (A.master) A.master.gain.value = masterGain(); if (!getPath(id)) voiceStop(); }
-    if (id === 'showFeedback') updateHeader();
     tg.classList.toggle('on'); return; }
   const sb = e.target.closest('.stepper button');
   if (sb){ const st = sb.parentElement, id = st.dataset.step, inc = +st.dataset.inc, unit = st.dataset.unit;
