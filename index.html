@@ -256,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-23.7';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-23.8';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -428,6 +428,15 @@ const LEVELS = [
 // Steve (Nov 23 2026): no keyboard-only levels; the 123 / Keys button works on every level. The four old "Play it" levels
 // stay in the list so saved progress keeps its positions, but are hidden and skipped.
 [9, 10, 11, 12, 14, 15, 16, 17, 18, 19].forEach(i => { LEVELS[i].hidden = true; });   // 14-19: the old fixed minor/modes levels, replaced by the Mode setting
+// Every level has a permanent name (its id). Saved progress is filed under these names, never under list positions,
+// so levels can be added, moved or retired without upsetting anyone's saved progress.
+const LEGACY_IDS = ['home-135','pentatonic','add-4','full-scale','new-key-each-round','three-octaves','two-note','three-note','four-note',
+  'play-1','play-2','play-3','play-4','six-note','minor-pentatonic','minor-full','minor-three','dorian-mixolydian','every-mode','modes-three',
+  'chroma-2','chroma-4','chroma-all','chroma-three','chord-roots-145','chord-roots-all','chord-inversions','chord-arpeggios','chord-block',
+  'sing-pentatonic','sing-all','sing-three','tap-basic','tap-offbeat','melody-3','melody-5',
+  'two-135-c','two-135-any','three-135','five-note','chroma-1','chord-roots-15','block-145','sing-135','melody-2'];   // the first ladder, by its old list positions
+LEGACY_IDS.forEach((id, i) => { LEVELS[i].id = id; });
+const LEVEL_BY_ID = {}; LEVELS.forEach((L, i) => { LEVEL_BY_ID[L.id] = i; });
 // The teaching order of the shown levels (stepping stones slot in after the level named in `after`). Saved progress is by list position, so it never moves.
 const ORDER = (() => { const base = [], ins = {};
   LEVELS.forEach((L,i) => { if (L.hidden) return; if (L.after !== undefined) (ins[L.after] = ins[L.after] || []).push(i); else base.push(i); });
@@ -486,12 +495,47 @@ const DEFAULT_SETTINGS = {
   tempo: 1, cadenceTempo: 1, noteTempo: 1, resTempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
+// ---- The progress file. Version 2 files (fv:2) file every per-level record under the level's id; the `ladder` number says which
+// set of levels the records belong to. Records for ids this version doesn't know are carried along untouched, so a newer or
+// older copy of the app never loses them. Files from before ids (no fv) are read by old list position.
+const LADDER = 1;
+const LV_FIELDS = ['mastered','pending','lvDays','hist','levelDeg'];   // per-level records
+function bucketIn(o, legacy){            // one mode's records: file form -> in-memory form (keyed by list position)
+  const r = Object.assign({}, o), xtra = {};
+  LV_FIELDS.forEach(k => { const out = {}, x = {};
+    Object.keys(o[k] || {}).forEach(key => { const id = legacy ? LEGACY_IDS[+key] : key, i = LEVEL_BY_ID[id];
+      if (i !== undefined) out[i] = o[k][key]; else if (id !== undefined) x[id] = o[k][key]; });
+    r[k] = out; xtra[k] = x; });
+  const cid = legacy ? LEGACY_IDS[o.current | 0] : o.currentId;
+  r.current = LEVEL_BY_ID[cid] !== undefined ? LEVEL_BY_ID[cid] : 0; delete r.currentId;
+  r.xtra = xtra; return r;
+}
+function bucketOut(o){                   // in-memory form -> file form
+  const r = Object.assign({}, o), xtra = o.xtra || {};
+  LV_FIELDS.forEach(k => { const out = Object.assign({}, xtra[k] || {});
+    Object.keys(o[k] || {}).forEach(i => { if (LEVELS[i]) out[LEVELS[i].id] = o[k][i]; });
+    r[k] = out; });
+  r.currentId = LEVELS[o.current] ? LEVELS[o.current].id : LEVELS[0].id;
+  delete r.current; delete r.unlocked; delete r.xtra; return r;
+}
+function toFile(st){
+  const f = bucketOut(st); f.modeStore = {};
+  Object.keys(st.modeStore || {}).forEach(m => { f.modeStore[m] = bucketOut(st.modeStore[m]); });
+  f.v = 2; f.fv = 2; f.ladder = LADDER; return f;
+}
+function fromFile(f){
+  const legacy = !(f.fv >= 2), r = bucketIn(f, legacy); r.modeStore = {};
+  Object.keys(f.modeStore || {}).forEach(m => { r.modeStore[m] = bucketIn(f.modeStore[m], legacy); });
+  r.unlocked = 0; return r;
+}
+const fileCurrent = f => f.fv >= 2 ? (LEVEL_BY_ID[f.currentId] || 0) : (f.current | 0);
 function freshState(){
   return { v:1, mode:'major', modeStore:{}, current:0, unlocked:0, mastered:{}, pending:{}, lvDays:{}, hist:{}, levelDeg:{}, deg:{}, conf:{},
-           xp:0, total:0, bestStreak:0, days:{}, settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) };
+           xtra:{}, archive:[], xp:0, total:0, bestStreak:0, days:{}, settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) };
 }
 let S = load();
 function normalize(s){
+  s = fromFile(s);
   const f = freshState();
   // Speed goal reset (Nov 2026): 2 seconds counted from the start of the tone is a good response.
   if (s.settings && !s.settings.timingV3 && s.settings.speedLimit) s.settings.speedLimit = 2;
@@ -522,7 +566,7 @@ function load(){
   return freshState();
 }
 // save() marks the progress as changed on this device (for syncing); saveRaw() doesn't.
-function saveRaw(){ try { localStorage.setItem(STORE, JSON.stringify(S)); } catch(e){} }
+function saveRaw(){ try { localStorage.setItem(STORE, JSON.stringify(toFile(S))); } catch(e){} }
 function save(){ S.updatedAt = Date.now(); saveRaw(); }
 const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 function dayStreak(){
@@ -1469,7 +1513,7 @@ function snoozeBackup(){ const d = new Date(); d.setDate(d.getDate()+3);
 async function exportProgress(){
   const name = `ear-trainer-${today()}.json`;
   const prev = S.lastBackup; S.lastBackup = today();
-  const json = JSON.stringify(S);
+  const json = JSON.stringify(toFile(S));
   try {
     const file = new File([json], name, {type:'application/json'});
     if (navigator.canShare && navigator.canShare({files:[file]})){
@@ -1560,7 +1604,7 @@ function nextLevel(){
 const sharedStats = lvl => S.mastered[lvl] !== undefined || !!S.pending[lvl] || lvl === nextLevel();
 // Modes: the whole ladder can be practiced in any of the six scales. The top-level progress fields always hold the active mode;
 // the others wait in S.modeStore. An old file has no mode, so it loads as major with everything it had.
-const MODE_FIELDS = ['current','unlocked','mastered','pending','lvDays','hist','levelDeg','deg','conf'];
+const MODE_FIELDS = ['xtra','current','unlocked','mastered','pending','lvDays','hist','levelDeg','deg','conf'];
 const modeName = m => m === 'major' ? 'Major (Ionian)' : m === 'minor' ? 'Minor (Aeolian)' : SCALES[m].name;
 function switchMode(m){
   if (!SCALES[m] || m === S.mode) return;
@@ -1759,7 +1803,7 @@ document.addEventListener('change', e => {
   }
   if (e.target.id === 'fImport'){
     const f = e.target.files[0]; if (!f) return;
-    f.text().then(t => { const d = JSON.parse(t); if (!d || d.v !== 1) throw 0; localStorage.setItem(STORE, t); S = load(); save(); syncSoon(); updateHeader(); renderSettings(); toast('Progress restored'); })
+    f.text().then(t => { const d = JSON.parse(t); if (!d || (d.v !== 1 && d.v !== 2)) throw 0; localStorage.setItem(STORE, t); S = load(); save(); syncSoon(); updateHeader(); renderSettings(); toast('Progress restored'); })
      .catch(() => toast('That file could not be read'));
   }
 });
@@ -1821,7 +1865,7 @@ async function syncPush(opts={}){
   try {
     if (!S.updatedAt) S.updatedAt = Date.now(), saveRaw();
     const stamp = S.updatedAt;
-    const body = { files: { [GIST_FILE]: { content: JSON.stringify({ v:1, updatedAt: stamp, device: deviceName(), state: S }) } } };
+    const body = { files: { [GIST_FILE]: { content: JSON.stringify({ v:2, updatedAt: stamp, device: deviceName(), state: toFile(S) }) } } };
     if (!SY.gistId){
       body.description = 'Ear Trainer progress (autodax.github.io/ear/)'; body.public = false;
       const g = await gh('/gists', { method:'POST', body: JSON.stringify(body) }); SY.gistId = g.id;
@@ -1864,7 +1908,7 @@ function adopt(remote){
 }
 function askWhich(remote){
   if (!$('modal').classList.contains('hidden')) return;
-  const r = remote.state || {}, desc = (st, t) => `L${levelNo(Math.min(LEVELS.length-1, st.current||0))}, ${st.total||0} answers, saved ${ago(t)}`;
+  const r = remote.state || {}, desc = (st, t) => `L${levelNo(Math.min(LEVELS.length-1, fileCurrent(st)))}, ${st.total||0} answers, saved ${ago(t)}`;
   modal({ icon:'🔄', title:'Which progress should I keep?',
     text: `Progress changed on this ${deviceName()} and on your ${remote.device || 'other device'}.<br><br><b>This ${deviceName()}:</b> ${desc(S, S.updatedAt)}<br><b>${remote.device || 'Other device'}:</b> ${desc(r, remote.updatedAt)}`,
     buttons: [ { label: `Keep this ${deviceName()}’s`, fn: () => { S.updatedAt = Date.now(); saveRaw(); syncPush().then(() => toast('Synced')).catch(syncErr); } },
