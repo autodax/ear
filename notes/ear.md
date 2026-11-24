@@ -61,7 +61,7 @@ to melodic dictation.
 
 ## Level ladder (LEVELS in index.html)
 
-39 levels, listed in teaching order. Every level has a permanent `id`; saved progress is filed under the id (never the list position), so levels can be added, moved or retired freely. Never reuse an id for a different level. `LADDER` (now 2) is the version of the whole ladder: a file saved under an older ladder is archived (`S.archive`) and the new ladder starts fresh. `levelNo(i)` gives the number shown to Steve.
+41 levels, listed in teaching order. Every level has a permanent `id`; saved progress is filed under the id (never the list position), so levels can be added, moved or retired freely. Never reuse an id for a different level. `LADDER` (now 2) is the version of the whole ladder: a file saved under an older ladder is archived (`S.archive`) and the new ladder starts fresh. `levelNo(i)` gives the number shown to Steve.
 
 Steve's decisions (Nov 23 2026):
 - No keyboard-only levels. The 123 / Keys button (setting `answerWith`) works on every level except sing and tap; the default is the number pad.
@@ -78,7 +78,7 @@ Numbers below are the numbers shown in the app (list order). Steve's request (No
 
    Steve's decision (Nov 22 2026): other keys come in early so the ear never leans on C. Level 1 stays in C; level 2 uses C, G, F; level 3 adds D and B♭ (`KEYS_B`); level 4 adds A and E♭ (`KEYS_C`). The key still changes per round.
 12. New key every round (all 12) · 13. Three octaves, new key every round
-14–18. Two-, three-, four-, five-, six-note phrases
+14–15. Two- and three-note phrases on 1 3 5 in any key (added at Steve's request, Nov 24 2026, before the all-seven-degree versions) · 16–20. Two-, three-, four-, five-, six-note phrases
 Then: chromatic (one outside note, then first two, two more, all twelve, 3-note phrases; 12-button pad, voice off), chords (roots 1 and 5, roots 1 4 5, every chord, inversions, arpeggios, block chords on 1 4 5, block chords), sing back (1 3 5, pentatonic, all seven, 3-note phrases; microphone, YIN `detectPitch`, any octave), rhythm (tap, off-beats, melody with rhythm in 2, 3, 5 notes; graded on the gaps between taps, tolerance `tol`).
 
 Tolerances, `limitMult` (speed limit multiplier: 1.25 to 3 on harder levels, 0 = no speed test on rhythm) and the key pools are my choices, not Steve's. Sing and rhythm levels have NOT been tried on his phone yet (microphone permission, audio mode, tap timing); expect tuning.

@@ -259,7 +259,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.5';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.6';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -394,6 +394,8 @@ const LEVELS = [
   {id:'full-scale', title:'Add 7: full scale', desc:'All seven notes · seven keys, still no sharps beyond A',          idx:IDX7, range:R1, keys:KEYS_C, len:1, input:'numbers'},
   {id:'new-key-each-round', title:'New key every round',  desc:'One octave · new key and octave each round', idx:IDX7, range:R1, len:1, input:'numbers'},
   {id:'three-octaves', title:'3 octaves, new keys', desc:'Low to high · new key each round', idx:IDX7, range:R3, len:1, input:'numbers'},
+  {id:'two-135-any', title:'Two-note phrases: 1 3 5, any key', desc:'Back to just 1, 3 and 5, now in every key', idx:[0,2,4], range:RP, len:2, input:'numbers'},
+  {id:'three-135-any', title:'Three-note phrases: 1 3 5, any key', desc:'Three notes from 1, 3 and 5, in every key', idx:[0,2,4], range:RP, len:3, input:'numbers'},
   {id:'two-note', title:'Two-note phrases',     desc:'Name both notes in order',         idx:IDX7, range:RP, len:2, input:'numbers'},
   {id:'three-note', title:'Three-note phrases',   desc:'Short melodic fragments',          idx:IDX7, range:RP, len:3, input:'numbers'},
   {id:'four-note', title:'Four-note phrases',    desc:'Longer fragments',                 idx:IDX7, range:RP, len:4, input:'numbers'},
