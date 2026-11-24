@@ -256,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.20';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.21';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -377,19 +377,19 @@ const FEEL2 = [[1,2],[2,2],[1,1],[1.5,1.5],[1,3]];
 const FEEL3 = [[1,1,2],[.5,.5,2],[1,.5,1.5],[1.5,.5,2],[1,1,1],[2,1,2]];
 const LEVELS = [
   // ---- The first steps: only 1, 3 and 5. Single notes, then echoes, then easy rhythm, then a chord underneath, then the same phrase in another key.
-  {id:'home-135', title:'Single notes: 1 3 5',    desc:'Single notes from the three steadiest notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:1, input:'numbers', cad:'I-V-I'},
-  {id:'part-2-first', title:'Phrases: two notes, first one shown', desc:'The phrase plays and its first note is shown; name the second · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, given:[0], input:'numbers', cad:'I-V-I'},
-  {id:'part-2-last', title:'Phrases: two notes, last one shown', desc:'The phrase plays and its second note is shown; name the first · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, given:[1], input:'numbers', cad:'I-V-I'},
-  {id:'two-135-c', title:'Phrases: two notes, 1 3 5', desc:'Name both notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', cad:'I-V-I'},
-  {id:'part-3-first2', title:'Phrases: three notes, first two shown', desc:'The phrase plays and its first two notes are shown; name the third · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[0,1], input:'numbers', cad:'I-V-I'},
-  {id:'part-3-last2', title:'Phrases: three notes, last two shown', desc:'The phrase plays and its last two notes are shown; name the first · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[1,2], input:'numbers', cad:'I-V-I'},
-  {id:'part-3-ends', title:'Phrases: three notes, first and last shown', desc:'The phrase plays and its first and last notes are shown; name the middle one · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[0,2], input:'numbers', cad:'I-V-I'},
-  {id:'part-3-first', title:'Phrases: three notes, first one shown', desc:'The phrase plays and its first note is shown; name the other two · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[0], input:'numbers', cad:'I-V-I'},
-  {id:'part-3-last', title:'Phrases: three notes, last one shown', desc:'The phrase plays and its last note is shown; name the first two · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[2], input:'numbers', cad:'I-V-I'},
-  {id:'three-135-c', title:'Phrases: three notes, 1 3 5', desc:'Name all three notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', cad:'I-V-I'},
-  {id:'feel-2-135', title:'Rhythm phrases: two notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', feel:FEEL2, cad:'I-V-I'},
-  {id:'feel-3-135', title:'Rhythm phrases: three notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', feel:FEEL3, cad:'I-V-I'},
-  {id:'harm-135', title:'Phrases over a chord: 1 3 5', desc:'A chord sounds under the phrase, so you hear it against home · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'numbers', feel:FEEL3, under:true, cad:'I-IV-V-I'},
+  {id:'home-135', title:'Single notes: 1 3 5',    desc:'Single notes from the three steadiest notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:1, input:'numbers'},
+  {id:'part-2-first', title:'Phrases: two notes, first one shown', desc:'The phrase plays and its first note is shown; name the second · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, given:[0], input:'numbers'},
+  {id:'part-2-last', title:'Phrases: two notes, last one shown', desc:'The phrase plays and its second note is shown; name the first · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, given:[1], input:'numbers'},
+  {id:'two-135-c', title:'Phrases: two notes, 1 3 5', desc:'Name both notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers'},
+  {id:'part-3-first2', title:'Phrases: three notes, first two shown', desc:'The phrase plays and its first two notes are shown; name the third · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[0,1], input:'numbers'},
+  {id:'part-3-last2', title:'Phrases: three notes, last two shown', desc:'The phrase plays and its last two notes are shown; name the first · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[1,2], input:'numbers'},
+  {id:'part-3-ends', title:'Phrases: three notes, first and last shown', desc:'The phrase plays and its first and last notes are shown; name the middle one · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[0,2], input:'numbers'},
+  {id:'part-3-first', title:'Phrases: three notes, first one shown', desc:'The phrase plays and its first note is shown; name the other two · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[0], input:'numbers'},
+  {id:'part-3-last', title:'Phrases: three notes, last one shown', desc:'The phrase plays and its last note is shown; name the first two · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[2], input:'numbers'},
+  {id:'three-135-c', title:'Phrases: three notes, 1 3 5', desc:'Name all three notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers'},
+  {id:'feel-2-135', title:'Rhythm phrases: two notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', feel:FEEL2},
+  {id:'feel-3-135', title:'Rhythm phrases: three notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', feel:FEEL3},
+  {id:'harm-135', title:'Phrases over a chord: 1 3 5', desc:'A chord sounds under the phrase, so you hear it against home · keys C, G and F', idx:[0,2,4], range:RP, keys:KEYS_A, len:3, input:'numbers', feel:FEEL3, under:true},
   // ---- Filling in the scale, then the same ladder in every key
   {id:'pentatonic', title:'Single notes: add 2 and 6', desc:() => `${lbl(modeScale(), [0,1,2,4,5]).join(' ')} · keys C, G and F. No 4th or 7th note yet`, idx:[0,1,2,4,5], range:R1, keys:KEYS_A, len:1, input:'numbers'},
   {id:'add-4', title:'Single notes: add 4',                desc:'The first six notes · keys C, G, F, D and B♭', idx:[0,1,2,3,4,5], range:R1, keys:KEYS_B, len:1, input:'numbers'},
@@ -1001,7 +1001,7 @@ const gentle = () => isYoung(S.current) ? 0.8 : 1;   // new levels start a littl
 const noteTempo = () => (S.settings.noteTempo || 1) * gentle();
 const resTempo = () => (S.settings.resTempo || 1) * gentle();
 const ev = (notes, dur, vel, spd) => ({ notes: Array.isArray(notes) ? notes : [notes], dur: dur / (spd || noteTempo()), vel });
-const cadenceEvents = (k, oct=0, scale='major') => { const cs = cadence(k, oct, LEVELS[S.current].cad || S.settings.cadenceType || 'I-IV-V-I', scale); return cs.map((c,i) => ev(c, i === cs.length - 1 ? 1.25 : 0.72, c.length === 1 ? 0.78 : 0.62, cadenceTempo())); };
+const cadenceEvents = (k, oct=0, scale='major') => { const cs = cadence(k, oct, S.settings.cadenceType || 'I-IV-V-I', scale); return cs.map((c,i) => ev(c, i === cs.length - 1 ? 1.25 : 0.72, c.length === 1 ? 0.78 : 0.62, cadenceTempo())); };
 
 async function playCadence(key, token, oct=0, scale='major'){
   await A.seq(cadenceEvents(key, oct, scale), token);
