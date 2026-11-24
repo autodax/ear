@@ -16,6 +16,7 @@ to melodic dictation.
   `piano/README.md` and in the app's Settings.
 - `icon-180.png`, `icon-512.png`: blue eighth note on black, resized from the image Steve supplied (Nov 23 2026). Icon links carry `?v=6` (index.html, manifest.json, ear-sw.js); bump it when the icon changes.
 - `manifest.json`: home-screen web app settings.
+- Toolbar icons (Train, Car, Progress, Settings): filled shapes supplied by Steve (Nov 24 2026), drawn in the page and coloured by the tab's text colour (blue when selected).
 
 ## Decisions (Steve's)
 
