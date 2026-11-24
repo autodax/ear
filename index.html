@@ -31,15 +31,16 @@ header{padding:10px 16px 8px}
 #app.ios-short nav{padding-bottom:var(--deadzone,0px)}
 #app.ios-short nav button{padding:7px 0 6px;gap:2px;font-size:11px}
 #app.ios-short nav button svg{width:21px;height:21px}
-.lvl-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.lvl-name{font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lvl-row{display:flex;flex-direction:column;gap:3px}
+.lvl-name{font-weight:700;font-size:24px;line-height:1.2}
 .lvl-num{color:var(--accent);font-weight:700;margin-right:6px}
-.today{color:var(--dim);font-size:13px;white-space:nowrap}
-.bar{height:6px;background:var(--panel2);border-radius:3px;margin-top:8px;overflow:hidden}
+.today{color:var(--dim);font-size:16px}
+.bar{height:8px;background:var(--panel2);border-radius:4px;margin-top:8px;overflow:hidden}
 .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .4s}
-.bar-title{display:flex;justify-content:space-between;color:var(--dim);font-size:12px;font-weight:600;margin-top:10px}
+.bar-title{display:flex;justify-content:space-between;color:var(--dim);font-size:16px;font-weight:600;margin-top:16px}
 .bar-title+.bar{margin-top:4px}
-.bar-label{display:flex;justify-content:space-between;color:var(--faint);font-size:12px;margin-top:4px}
+.bar-label{display:flex;flex-direction:column;gap:3px;color:var(--faint);font-size:15px;margin-top:8px}
+.bar-label:empty,.bar-label span:empty{display:none}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px 16px}
 .view{display:none}.view.on{display:block}
 /* Train screen: center the controls vertically in the space between header and tab bar */
@@ -256,7 +257,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.2';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.3';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1685,8 +1686,8 @@ function updateHeader(){
   const done = S.mastered[S.current] !== undefined;
   $('hBarL').textContent = done ? 'You have mastered this level; extra practice is fine'
     : m.pend && m.ready ? (m.pend === today() ? 'Strong work. Do it again on another day to lock it in' : `Confirming: ${Math.min(m.todayN, m.needToday)} of ${m.needToday} answers today`)
-    : m.n < m.W ? `${m.n} of the ${m.W} answers needed so far` : `Accuracy ${(m.acc*100).toFixed(0)}%, need ${(m.target*100)|0}%`;
-  $('hBarR').textContent = done ? '' : m.n < m.W/2 ? (isYoung(S.current) ? 'Gentle start: slower, with extra review' : '') : (!m.degOk ? 'needs work: ' + m.degs.filter(x=>!x.ok).map(x=>x.d).join(' ')
+    : m.n < m.W ? `${m.n} of the ${m.W} answers toward mastery` : `Accuracy ${(m.acc*100).toFixed(0)}%, need ${(m.target*100)|0}%`;
+  $('hBarR').textContent = done ? '' : m.n < m.W/2 ? (isYoung(S.current) ? 'Gentle start: slower practice' : '') : (!m.degOk ? 'needs work: ' + m.degs.filter(x=>!x.ok).map(x=>x.d).join(' ')
     : (S.settings.showFeedback !== false && !m.speedOk && isFinite(m.med)) ? `speed ${(m.med/1000).toFixed(1)}s, goal ${m.limit.toFixed(1)}s` : '');
   const td = S.days[today()] || 0;
   $('hToday').textContent = td >= S.settings.dailyGoal ? `Answered today: ${td} · goal ✓` : `Answered today: ${td}/${S.settings.dailyGoal}`;
