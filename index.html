@@ -69,6 +69,7 @@ nav button.on{color:var(--accent)}
 .slot.ok{background:rgba(191,227,255,.16);color:var(--good)}
 .slot.no{background:rgba(217,137,90,.18);color:var(--bad)}
 .slot.hl{border-color:var(--accent)}
+.slot.given{background:transparent;border:2px dashed var(--line);color:var(--accent)}
 .slot small{font-size:11px;font-weight:600;color:var(--text);opacity:.85}
 .tools{display:flex;gap:6px;margin-top:12px}
 .tool{flex:1;background:var(--panel2);border-radius:10px;padding:10px 2px;font-size:13px;color:var(--dim);white-space:nowrap}
@@ -253,7 +254,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.13';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-24.14';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -375,7 +376,14 @@ const FEEL3 = [[1,1,2],[.5,.5,2],[1,.5,1.5],[1.5,.5,2],[1,1,1],[2,1,2]];
 const LEVELS = [
   // ---- The first steps: only 1, 3 and 5. Single notes, then echoes, then easy rhythm, then a chord underneath, then the same phrase in another key.
   {id:'home-135', title:'Single notes: 1 3 5',    desc:'Single notes from the three steadiest notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:1, input:'numbers', cad:'I-V-I'},
+  {id:'part-2-first', title:'Phrases: two notes, first one shown', desc:'The phrase plays and its first note is shown; name the second · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, given:[0], input:'numbers', cad:'I-V-I'},
+  {id:'part-2-last', title:'Phrases: two notes, last one shown', desc:'The phrase plays and its second note is shown; name the first · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, given:[1], input:'numbers', cad:'I-V-I'},
   {id:'two-135-c', title:'Phrases: two notes, 1 3 5', desc:'Name both notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', cad:'I-V-I'},
+  {id:'part-3-first2', title:'Phrases: three notes, first two shown', desc:'The phrase plays and its first two notes are shown; name the third · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[0,1], input:'numbers', cad:'I-V-I'},
+  {id:'part-3-last2', title:'Phrases: three notes, last two shown', desc:'The phrase plays and its last two notes are shown; name the first · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[1,2], input:'numbers', cad:'I-V-I'},
+  {id:'part-3-ends', title:'Phrases: three notes, first and last shown', desc:'The phrase plays and its first and last notes are shown; name the middle one · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[0,2], input:'numbers', cad:'I-V-I'},
+  {id:'part-3-first', title:'Phrases: three notes, first one shown', desc:'The phrase plays and its first note is shown; name the other two · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[0], input:'numbers', cad:'I-V-I'},
+  {id:'part-3-last', title:'Phrases: three notes, last one shown', desc:'The phrase plays and its last note is shown; name the first two · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, given:[2], input:'numbers', cad:'I-V-I'},
   {id:'three-135-c', title:'Phrases: three notes, 1 3 5', desc:'Name all three notes, in order · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', cad:'I-V-I'},
   {id:'feel-2-135', title:'Rhythm phrases: two notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:2, input:'numbers', feel:FEEL2, cad:'I-V-I'},
   {id:'feel-3-135', title:'Rhythm phrases: three notes, 1 3 5', desc:'Short piano phrases with an easy rhythm; name the notes · key of C', idx:[0,2,4], range:R1, keys:[0], len:3, input:'numbers', feel:FEEL3, cad:'I-V-I'},
@@ -954,6 +962,7 @@ function makeQuestion(){
   q.labels = q.labels || q.pos.map((s,i) => q.alts[i] ? CHROMA[mod(SCALES[scale].steps[mod(s,7)] + q.alts[i], 12)] : posLabel(s, scale));
   q.midi = q.midi || q.pos.map((s,i) => noteMidi(s, key, scale, q.alts[i]));
   q.len = q.len || L.len;
+  q.given = L.given || [];   // notes that are shown on screen and only need to be heard
   if (L.feel){ q.feel = pick(L.feel).slice(); q.bpm = 88; }
   if (L.under){ const t = tonicMidi(key) + 12*q.oct, st = SCALES[scale].steps; q.under = [t-12, t-12+st[4], t+st[2]]; }
   if (L.xpose){   // heard in one key, played back in another
@@ -1113,10 +1122,11 @@ function renderSlots(q, results){
   let h = '';
   for (let i=0;i<q.len;i++){
     const a = T.ans[i]; let cls = 'slot', txt = '', sub = '';
+    if (q.given.includes(i)){ h += `<div class="slot given" data-i="${i}">${q.labels[i]}</div>`; continue; }
     if (a !== undefined) txt = q.input === 'tap' ? '•' : midiIn(q) ? (a.midi == null ? '–' : noteName(a.midi, ansKey(q))) : a.label;
     if (results){ cls += results[i] ? ' ok' : ' no';
       if (!results[i]) sub = midiIn(q) ? noteName(q.midi[i], ansKey(q)) : q.labels[i]; }
-    else if (i === T.ans.length) cls += ' cur';
+    else if (i === nextSlot(q)) cls += ' cur';
     h += `<div class="${cls}" data-i="${i}">${txt || (results ? '–' : '')}${sub ? `<small>${sub}</small>` : ''}</div>`;
   }
   el.innerHTML = h;
@@ -1132,12 +1142,14 @@ function setChip(q){
 // What to ask for, in words
 function promptFor(q){
   if (q.kind === 'chord') return q.sound && q.len === 1 ? ['Name the chord’s root', 'The scale degree it is built on'] : q.sound ? ['Name its three notes', 'Lowest first'] : ['Name its three notes', 'In the order you hear them'];
+  if (q.given.length) return [q.len - q.given.length === 1 ? 'Name the missing note' : `Name the ${q.len - q.given.length} missing notes`, 'The others are shown'];
   return [q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : ''];
 }
 
 async function nextQuestion(){
   kill(T.token); kill(T.aux); A.stopAll(); const token = T.token = newToken();
   const q = makeQuestion(); T.q = q; T.ans = []; T.results = null;
+  q.given.forEach(i => { T.ans[i] = { label: q.labels[i], midi: q.midi[i], given: true }; });
   T.phase = 'playing';
   $('bGo').classList.add('hidden'); $('bCompare').disabled = true; $('bGiveUp').disabled = true;
   setKeyLabel(q.key, q.scale); if (q.kind === 'rhythm' && q.rhy === 'tap') $('tKey').innerHTML = `<b>♩ = ${q.bpm}</b>`;
@@ -1199,13 +1211,16 @@ function onAnswer(a){
   if (T.phase !== 'answering' || !T.q) return;
   const q = T.q;
   if (a.at == null) a.at = performance.now();
-  T.ans.push(a); renderSlots(q);
+  const at = nextSlot(q); if (at < 0) return;
+  T.ans[at] = a; renderSlots(q);
   if (q.input === 'numbers'){
     const b = T.tapped;
     if (b){ b.classList.add('flash-tap'); setTimeout(() => b.classList.remove('flash-tap'), 160); }
   }
-  if (T.ans.length >= q.len) grade();
+  if (nextSlot(q) < 0) grade();
 }
+// The first note position still waiting for an answer (notes that are shown on screen count as answered); -1 when all are in
+function nextSlot(q){ for (let i = 0; i < q.len; i++) if (!T.ans[i]) return i; return -1; }
 
 // Per note: was the pitch (or number) right? And for rhythm questions: was the timing right?
 function pitchResults(q){
@@ -1229,7 +1244,7 @@ function answeredText(q){
 async function grade(){
   const q = T.q; T.phase = 'feedback'; lockPad(true); $('bGiveUp').disabled = true;
   const isRhy = q.kind === 'rhythm', statsOn = !(isRhy && q.rhy === 'tap');
-  const lastAt = T.ans.length ? T.ans[T.ans.length-1].at : 0, t = isRhy ? 0 : Math.max(0, (lastAt || performance.now()) - T.start);
+  const lastAns = T.ans.filter(x => x && !x.given).pop(), lastAt = lastAns ? lastAns.at : 0, t = isRhy ? 0 : Math.max(0, (lastAt || performance.now()) - T.start);
   kill(T.aux);
   const pitchRes = pitchResults(q), timeRes = isRhy ? timingResults(q) : null;
   const res = pitchRes.map((p,i) => p && (!timeRes || timeRes[i]));
@@ -1245,6 +1260,7 @@ async function grade(){
     if (shared) for (const k in S.conf){ S.conf[k] *= 0.994; if (S.conf[k] < 0.05) delete S.conf[k]; }
     const chroma = !!LEVELS[S.current].chroma;
     q.labels.forEach((l,i) => {
+      if (q.given.includes(i)) return;
       pushCap(S.levelDeg[lvl][l] = S.levelDeg[lvl][l] || [], pitchRes[i], 12);
       if (shared){ S.deg[l] = S.deg[l] || {r:[], t:[]};
       pushCap(S.deg[l].r, pitchRes[i], 30);
@@ -1376,7 +1392,8 @@ async function giveUp(){
   pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok: false, t: 0, r: q.review ? 1 : 0 }, 40);
   if (!(isRhy && q.rhy === 'tap')){
     S.levelDeg[lvl] = S.levelDeg[lvl] || {};
-    q.labels.forEach(l => {
+    q.labels.forEach((l,i) => {
+      if (q.given.includes(i)) return;
       pushCap(S.levelDeg[lvl][l] = S.levelDeg[lvl][l] || [], false, 12);
       if (sharedStats(lvl)){ S.deg[l] = S.deg[l] || {r:[], t:[]};
       pushCap(S.deg[l].r, false, 30); }
@@ -2000,7 +2017,7 @@ function voiceListen(){
     if (!fresh.length){ log('ignored (final of what it already answered)'); return; }
     const valid = fresh.filter(d => document.querySelector(`#tPad .deg[data-n="${d}"]:not(.off)`));
     if (!valid.length){ log(`ignored (${fresh.join(' ')} not on this level)`); return; }
-    const take = valid.slice(0, Math.max(1, T.q.len - T.ans.length));
+    const take = valid.slice(0, Math.max(1, T.q.len - T.ans.filter(Boolean).length));
     VOICE.usedCount[info.k] = already + take.length;
     if (T.q.len === 1) VOICE.used = info.k;
     log(`ANSWERED ${take.join(' ')}`);

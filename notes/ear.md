@@ -63,7 +63,7 @@ to melodic dictation.
 
 ## Level ladder (LEVELS in index.html)
 
-35 levels, listed in teaching order. Every level has a permanent `id`; saved progress is filed under the id (never the list position), so levels can be added, moved or retired freely. Never reuse an id for a different level. `LADDER` (now 2) is the version of the whole ladder: a file saved under an older ladder is archived (`S.archive`) and the new ladder starts fresh. `levelNo(i)` gives the number shown to Steve.
+42 levels, listed in teaching order. Every level has a permanent `id`; saved progress is filed under the id (never the list position), so levels can be added, moved or retired freely. Never reuse an id for a different level. `LADDER` (now 2) is the version of the whole ladder: a file saved under an older ladder is archived (`S.archive`) and the new ladder starts fresh. `levelNo(i)` gives the number shown to Steve.
 
 Steve's decisions (Nov 23 2026):
 - No keyboard-only levels, and no keyboard answers for now: every lesson uses the number pad (tap levels use the tap area).
@@ -75,6 +75,9 @@ How modes are stored: `S.mode` is the active mode; the progress fields `current,
 
 Numbers below are the numbers shown in the app (list order). Steve's request (Nov 23 2026), built as levels 1–8: start with 1 3 5 in major; keep the single notes, then two- and three-note echoes of the same degrees; simple rhythm early with short piano phrases; harmony alongside melody with I–V–I and I–IV–V–I; a "Play this phrase in another key" exercise with separate feedback on melodic shape (up, down, same). The exact levels, rhythms and keys are my choices.
 
+Phrase stepping stones (Steve, Nov 24 2026, to make single notes → phrases gradual): the phrase plays in full, but some notes are shown on screen (level prop `given`, note positions; shown notes are pre-filled in `T.ans`, drawn as dashed slots, and not counted in the per-degree stats) and he names only the rest. Order: two notes with the first shown, with the last shown, then the whole two-note phrase; three notes with the first two shown, the last two shown, the first and last shown (name the middle), the first shown, the last shown, then the whole three-note phrase. All 1 3 5, key of C. These are levels 2, 3, 5, 6, 7, 8, 9 (ids `part-*`).
+
+The older list below was written before them, so its numbers are off by the stepping stones:
 1. Home base: 1 3 5 (single notes, key of C) · 2. Two-note echoes · 3. Three-note echoes · 4. Two notes with a rhythm · 5. Three notes with a rhythm (all key of C, cadence I–V–I) · 6. Phrases over a chord (keys C, G, F; a soft I chord sounds under the phrase; cadence I–IV–V–I) · (The two keyboard "Another key" levels were removed Nov 24 2026; the any-key phrase levels, answered on the pad, cover other keys.)
 9. Add 2 and 6 (pentatonic) · 10. Add 4 · 11. Add 7, full scale
 
