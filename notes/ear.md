@@ -15,6 +15,7 @@ to melodic dictation.
   AAC `.m4a` named by MIDI note number (21 = A0 … 108 = C8), one every 3 keys. Credit is in
   `piano/README.md` and in the app's Settings.
 - `icon-180.png`, `icon-512.png`: the two-tone blue ear (light blue ear, cobalt notes, black background), chosen by Steve Nov 24 2026. The `icons/` folder keeps the variants he supplied (two-tone blue, orange ear with blue notes, orange ear with light blue notes; 180 and 512 px each); to switch, copy a variant over the two root files and bump `?v=`. Icon links carry `?v=8` (index.html, manifest.json, ear-sw.js); bump it when the icon changes. `A.engage()` also sets the media-session artwork (the same icon) for the lock screen and Dynamic Island; whether iOS shows it there is unconfirmed.
+- `assets/`: piano keyboard artwork Steve supplied Nov 24 2026 for a possible landscape layout (warm ivory and neutral white, each with a pressed-key version and a plain template). Not used by the app yet, and not cached by the service worker.
 - `manifest.json`: home-screen web app settings.
 - Toolbar icons (Train, Car, Progress, Settings): filled shapes supplied by Steve (Nov 24 2026), drawn in the page and coloured by the tab's text colour (blue when selected).
 
