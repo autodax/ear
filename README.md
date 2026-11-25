@@ -3,7 +3,7 @@
 A scale-degree ear-training app that runs in the browser, built for one learner (Steve) and used mainly as an
 iPhone home-screen web app. Live at https://autodax.github.io/ear/.
 
-This page is for anyone, human or AI, who is taking over the project. Read it first, then `CLAUDE.md` (working
+This page is for anyone, human or AI, who is taking over the project. Read it first, then `AGENTS.md` (the working
 rules) and `notes/ear.md` (every decision, lesson learned and pending idea, in detail).
 
 ## The goal
