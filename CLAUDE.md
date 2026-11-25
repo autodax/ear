@@ -19,6 +19,10 @@ Never put personal details in the repo: no addresses, account numbers, balances,
   (for example, swipe the app away and reopen it). Always include the version number
   (`APP_VERSION`) in that message, every time something is pushed.
 
+## Start here
+
+`README.md` is the overview for anyone taking over: the goal, the teaching philosophy, the full level list and how the app is built. Keep its level list in step with `LEVELS` when levels are added, moved or renamed.
+
 ## Notes
 
 Everything about the app (decisions, level ladder, iPhone lessons, release steps) is in
