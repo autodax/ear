@@ -118,7 +118,7 @@ anyone's progress. Never reuse an id for a different level.
 ## Working with Steve
 
 - Steve does not read code. Explain changes in plain language: what he will see and do, never code.
-- Ask questions in plain text, not pop-up multiple choice. When a choice is visual, show a few options side by side.
+- For simple choice questions, use clickable choice buttons rather than plain-text questions. When a choice is visual, show a few options side by side.
 - Do the work, test it, push it, then say briefly what changed and what he must do (usually: swipe the app away and
   reopen it).
 - He uses an iPhone (mobile first, 402 × 874 viewport; the home-screen app reports 402 × 812). iPhone behaviours

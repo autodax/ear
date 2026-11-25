@@ -11,7 +11,7 @@ Never put personal details in the repo: no addresses, account numbers, balances,
 
 - Steve doesn't read code. Describe changes in plain language: what he'll see and do, not how
   it's built. Don't paste code into replies.
-- Ask clarifying questions in plain text, never as pop-up multiple-choice dialogs.
+- For simple choice questions, use clickable choice buttons rather than plain-text questions.
 - He uses an iPhone (Safari, and the app saved to the home screen as a web app). Mobile-first.
 - When a choice is visual (icons, layouts, sounds), show a few options side by side before
   committing to one.
