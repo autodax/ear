@@ -134,7 +134,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 .lv .t{flex:1;min-width:0}.lv .t b{font-weight:600;font-size:15px}.lv .t div{font-size:12px;color:var(--dim)}
 .lv.locked{opacity:.45}
 .lv .act{font-size:13px;color:var(--accent);font-weight:600;padding:6px 4px}
-.degbars{display:grid;grid-template-columns:24px 1fr 46px 48px;gap:8px 10px;align-items:center;padding:12px 0}
+.degbars{display:grid;grid-template-columns:24px 1fr 46px;gap:8px 10px;align-items:center;padding:12px 0}
 .degbars .d{font-weight:800;text-align:center}
 .degbars .b{height:10px;background:var(--panel2);border-radius:5px;overflow:hidden}
 .degbars .b i{display:block;height:100%;background:var(--good)}
@@ -256,7 +256,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-24.21';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-25.1';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -894,7 +894,7 @@ function pickPhrase(lvl, scale='major', len){
 }
 // Chords: a triad on a scale degree, built from the major scale. 'root' (name the root), 'arp' (name the notes one by one), 'block' (name the notes of a chord played together, lowest first)
 function chordQuestion(L, lvl, key, scale='major'){
-  const labels = L.roots.map(i => String(i+1));
+  const labels = L.roots.map(i => SCALES[scale].labels[i]);
   const r = L.roots[labels.indexOf(weightedPick(labels, labels.map(d => degWeight(d, lvl))))];
   let notes = [r, r+2, r+4];
   const turn = () => { const n = Math.floor(Math.random()*3); for (let k = 0; k < n; k++) notes.push(notes.shift() + 7);
@@ -1085,9 +1085,10 @@ function renderPad(q){
   if (mode === 'piano'){ renderPiano(q ? ansKey(q) : (T.roundKey || 0), q); return; }
   if (mode !== 'numbers') return;
   const scale = q ? q.scale : (cur.scales.includes(T.roundScale) ? T.roundScale : cur.scales[0]);
-  const active = levelLabels(LEVELS[q ? q.lvl : S.current], scale);
-  pad.classList.toggle('chroma', !!cur.chroma);
-  if (cur.chroma){
+  const qLvl = LEVELS[q ? q.lvl : S.current];
+  const active = levelLabels(qLvl, scale);
+  pad.classList.toggle('chroma', !!qLvl.chroma);
+  if (qLvl.chroma){
     // all twelve notes; the ones this level doesn't use yet are dimmed
     pad.innerHTML = chromaLabels(scale).map(d => `<button class="deg ${d==='1'?'tonic':''} ${active.includes(d)?'':'off'}" data-d="${d}"${/^\d$/.test(d) ? ` data-n="${d}"` : ''}>${d}</button>`).join('');
     return;
@@ -1266,7 +1267,7 @@ async function grade(){
     S.levelDeg[lvl] = S.levelDeg[lvl] || {};
     const shared = sharedStats(lvl);
     if (shared) for (const k in S.conf){ S.conf[k] *= 0.994; if (S.conf[k] < 0.05) delete S.conf[k]; }
-    const chroma = !!LEVELS[S.current].chroma;
+    const chroma = !!LEVELS[lvl].chroma;
     q.labels.forEach((l,i) => {
       if (q.given.includes(i)) return;
       pushCap(S.levelDeg[lvl][l] = S.levelDeg[lvl][l] || [], pitchRes[i], 12);
@@ -1384,7 +1385,7 @@ async function compare(){
   const q = T.q; if (!q || q.len !== 1 || !T.results || T.results[0]) return;
   kill(T.token); A.stopAll(); const token = T.token = newToken();
   // your answer, resolved, then the real note, resolved
-  let gs = null; const chroma = !!LEVELS[S.current].chroma, a0 = T.ans[0];
+  let gs = null; const chroma = !!LEVELS[q.lvl].chroma, a0 = T.ans[0];
   if (midiIn(q)){
     const lab = a0 && a0.midi != null ? pcToLabel(a0.midi, q.key, q.scale, chroma) : null;
     if (!lab){ if (a0 && a0.midi != null){ A.note(a0.midi, A.now()+0.05, 1); await wait(1300, token); } }
@@ -1401,7 +1402,8 @@ async function giveUp(){
   kill(T.token); kill(T.aux); A.stopAll(); clearVoicePending();
   const res = q.labels.map(() => false); T.results = res;
   const lvl = q.lvl, isRhy = q.kind === 'rhythm';
-  pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok: false, t: 0, r: q.review ? 1 : 0 }, 40);
+  pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok: false, t: 0, r: q.review ? 1 : 0, d: today() }, 60);
+  if (!q.review){ const ld = S.lvDays[lvl] = S.lvDays[lvl] || []; if (!ld.includes(today())) ld.push(today()); }
   if (!(isRhy && q.rhy === 'tap')){
     S.levelDeg[lvl] = S.levelDeg[lvl] || {};
     q.labels.forEach((l,i) => {
@@ -1527,7 +1529,11 @@ function confetti(){
    ===================================================================== */
 const Car = { running:false, token:null, wake:null };
 async function requestWake(){ try { if ('wakeLock' in navigator) Car.wake = await navigator.wakeLock.request('screen'); } catch(e){} }
-function carDegrees(){ return S.settings.car.degrees === 'all' ? ALL7 : (LEVELS[Math.min(S.current, 5)].idx || [0,2,4]).map(i => String(i+1)); }
+function carDegrees(){
+  if (S.settings.car.degrees === 'all') return ALL7;
+  const L = LEVELS[S.current];
+  return L && L.idx && L.idx.length ? L.idx.map(i => String(i+1)) : ALL7;
+}
 async function carLoop(token){
   const c = S.settings.car; let key = c.keyMode === 'random' ? randKey(-1) : c.keyMode === 'C' ? 0 : T.key;
   let last = null, first = true;
@@ -1682,10 +1688,6 @@ function renderSettings(){
     <h2>Mode</h2><div class="card">
       ${optSelect('_mode','Practice in','Every level is heard and named in this mode. Each mode keeps its own progress, so switching never loses anything', S.mode, MODE_ORDER.map(k => [k, modeName(k)]))}
     </div>
-    <h2>Keyboard</h2><div class="card">
-      ${optToggle('labelKeys','Note names on keys','Turn off once you know the keyboard', s.labelKeys)}
-      ${optToggle('markTonic','Mark the tonic','Dot on the key’s home note', s.markTonic)}
-    </div>
     <h2>Voice (experiment)</h2><div class="card">
       ${optToggle('voiceOn','Answer by voice','Say the number instead of tapping (number-pad questions only)', s.voiceOn)}
       <div class="row"><div><div class="lab">Note loudness with voice</div><div class="sub" id="vBoostTxt">${(s.voiceBoost || 1.5).toFixed(1)}× · the phone plays quieter while the mic is on</div></div><input type="range" min="1" max="4" step="0.1" value="${s.voiceBoost || 1.5}" id="voiceBoostRange"></div>
@@ -1725,8 +1727,7 @@ function renderProgress(){
   COMING.forEach(t => { lv += `<div class="lv locked"><div class="n">·</div><div class="t"><b>${t}</b><div>Coming later</div></div></div>`; });
   let bars = '';
   [...ALL7, ...['♭2','♭3','♯4','♭5','♭6','♭7'].filter(d => S.deg[d] && S.deg[d].r.length)].forEach(d => { const st = S.deg[d]; const a = st ? accOf(st.r.slice(-20)) : null;
-    const tm = st && st.t.length ? (st.t.slice().sort((x,y)=>x-y)[Math.floor(st.t.length/2)]/1000).toFixed(1)+'s' : '–';
-    bars += `<div class="d">${d}</div><div class="b"><i style="width:${a===null?0:a*100}%;background:${a===null?'':a>=.9?'#b4b9ff':a>=.7?'#7f86e8':'var(--bad)'}"></i></div><div class="p">${a===null?'–':(a*100).toFixed(0)+'%'}</div><div class="tm">${tm}</div>`; });
+    bars += `<div class="d">${d}</div><div class="b"><i style="width:${a===null?0:a*100}%;background:${a===null?'':a>=.9?'#b4b9ff':a>=.7?'#7f86e8':'var(--bad)'}"></i></div><div class="p">${a===null?'–':(a*100).toFixed(0)+'%'}</div>`; });
   const confs = topConfusionPairs(6);
   $('v-prog').innerHTML = `
     <div class="stats" style="margin-top:6px">
@@ -1736,9 +1737,9 @@ function renderProgress(){
     </div>
     <h2>Trouble spots</h2><div class="card">${confs.length ? confs.map(c => `<div class="row"><div class="lab">You mix up <b>${c.a}</b> and <b>${c.b}</b></div><div class="sub">${c.v.toFixed(1)}× recently</div></div>`).join('')
       : '<div class="row"><div class="sub">No repeated mix-ups yet. When you confuse two degrees, they’ll show here and get drilled more often.</div></div>'}</div>
-    <h2>Scale degrees · last 20 · typical speed</h2><div class="card"><div class="degbars">${bars}</div></div>
+    <h2>Scale degrees · last 20</h2><div class="card"><div class="degbars">${bars}</div></div>
     <h2>Levels</h2><div class="card">${lv}</div>
-    <p class="note">To master a level: ${m.W} recent answers at ${(m.target*100)|0}% or better, every degree at least 75% recently.</p>`;
+    <p class="note">To master a level: ${m.W} recent answers at ${(m.target*100)|0}% or better, every degree at least 75% recently, confirmed again on a later day.</p>`;
 }
 
 /* =====================================================================
@@ -1892,7 +1893,7 @@ function askWhich(remote){
   if (!$('modal').classList.contains('hidden')) return;
   const r = remote.state || {}, desc = (st, t) => `L${levelNo(Math.min(LEVELS.length-1, fileCurrent(st)))}, ${st.total||0} answers, saved ${ago(t)}`;
   modal({ icon:'🔄', title:'Which progress should I keep?',
-    text: `Progress changed on this ${deviceName()} and on your ${remote.device || 'other device'}.<br><br><b>This ${deviceName()}:</b> ${desc(S, S.updatedAt)}<br><b>${remote.device || 'Other device'}:</b> ${desc(r, remote.updatedAt)}`,
+    text: `Progress changed on this ${deviceName()} and on your ${remote.device || 'other device'}.<br><br><b>This ${deviceName()}:</b> ${desc(toFile(S), S.updatedAt)}<br><b>${remote.device || 'Other device'}:</b> ${desc(r, remote.updatedAt)}`,
     buttons: [ { label: `Keep this ${deviceName()}’s`, fn: () => { S.updatedAt = Date.now(); saveRaw(); syncPush().then(() => toast('Synced')).catch(syncErr); } },
                { label: `Use the ${remote.device || 'other device'}’s`, ghost: true, fn: () => adopt(remote) } ] });
 }

@@ -1,5 +1,5 @@
 "use strict";
-const SW_VERSION = '2026-11-24.3';
+const SW_VERSION = '2026-11-25.1';
 const APP_CACHE = 'ear-app-' + SW_VERSION;
 const SAMPLE_CACHE = 'music-samples-v2';
 
@@ -74,7 +74,7 @@ self.addEventListener('fetch', event => {
   const isEarPage = relPath === '' || relPath === 'index.html';
   const isPianoSample = relPath.startsWith('piano/') && relPath.endsWith('.m4a');
   const isEarAsset = relPath === 'manifest.json' || relPath.startsWith('icon-');
-  if (!isEarPage && !isEarAsset) return;
+  if (!isEarPage && !isPianoSample && !isEarAsset) return;
 
   // Let version checks bypass the cache so updates are always detected promptly
   if (isEarPage && url.searchParams.has('check')) return;
